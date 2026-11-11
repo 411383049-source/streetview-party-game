@@ -674,7 +674,8 @@ body {
   text-align: center;
 }
 
-.meme-thumb-box img {
+.meme-thumb-box img,
+.meme-thumb-box video {
   width: 100%;
   height: 100%;
   object-fit: contain;

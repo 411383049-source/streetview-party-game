@@ -624,18 +624,163 @@ const DEFAULT_REACTION_RULES = [
   { id: "r0",  label: "0 ~ 39 分（＜40）",  minScore: 0,  maxScore: 39, text: "🙏 至少耶穌跟你媽愛你，別太看不起自己，你只是不太會猜", durationSec: 10, imgKey: "lt40", bannerClass: "roast-severe" }
 ];
 
+// 支援超大 GIF 檔案儲存的記憶體快取與 IndexedDB（突破 localStorage 5MB 限制）
+window._cachedReactionRules = null;
+
+function openReactionIDB() {
+  return new Promise((resolve, reject) => {
+    if (!window.indexedDB) return reject(new Error("No IndexedDB"));
+    const req = indexedDB.open("sv_reactions_db", 1);
+    req.onupgradeneeded = (e) => {
+      const db = e.target.result;
+      if (!db.objectStoreNames.contains("rules_store")) {
+        db.createObjectStore("rules_store");
+      }
+    };
+    req.onsuccess = (e) => resolve(e.target.result);
+    req.onerror = (e) => reject(e.target.error);
+  });
+}
+
+function saveRulesToStorage(rules) {
+  window._cachedReactionRules = JSON.parse(JSON.stringify(rules));
+  try {
+    localStorage.setItem("sv_reaction_rules", JSON.stringify(rules));
+  } catch (e) {
+    // 若含超大 GIF 超出 localStorage 5MB，自動改存至 IndexedDB
+  }
+  openReactionIDB()
+    .then((db) => {
+      const tx = db.transaction("rules_store", "readwrite");
+      tx.objectStore("rules_store").put(rules, "current_rules");
+    })
+    .catch(() => {});
+}
+
+function loadRulesFromIDBOnStartup() {
+  openReactionIDB()
+    .then((db) => {
+      const tx = db.transaction("rules_store", "readonly");
+      const req = tx.objectStore("rules_store").get("current_rules");
+      req.onsuccess = () => {
+        if (Array.isArray(req.result) && req.result.length >= 1) {
+          window._cachedReactionRules = req.result;
+          renderMemeTestButtons();
+        }
+      };
+    })
+    .catch(() => {});
+}
+setTimeout(loadRulesFromIDBOnStartup, 50);
+
 function getReactionRules() {
+  if (Array.isArray(window._cachedReactionRules) && window._cachedReactionRules.length >= 1) {
+    return JSON.parse(JSON.stringify(window._cachedReactionRules));
+  }
   try {
     const saved = JSON.parse(localStorage.getItem("sv_reaction_rules") || "null");
     if (Array.isArray(saved) && saved.length >= 1) {
-      return saved;
+      window._cachedReactionRules = saved;
+      return JSON.parse(JSON.stringify(saved));
     }
   } catch (e) {}
   return JSON.parse(JSON.stringify(DEFAULT_REACTION_RULES));
 }
 
+// 智慧解析各種 GIF / 迷因網址（支援 Google 圖片搜尋連結、Giphy、Imgur、Tenor 等）
+function normalizeMemeUrl(rawUrl) {
+  if (!rawUrl) return "";
+  let url = String(rawUrl).trim();
+  if (url.startsWith("data:")) return url;
+
+  // 若貼上的是 <img src="..."> HTML 標籤，自動擷取 src
+  const srcMatch = url.match(/src=["']([^"']+)["']/i);
+  if (srcMatch && srcMatch[1]) {
+    url = srcMatch[1].trim();
+  }
+
+  try {
+    const parsed = new URL(url);
+    // 1. Google 圖片搜尋結果網址 (google.com/imgres?imgurl=...)
+    if (parsed.hostname.includes("google.") && parsed.searchParams.get("imgurl")) {
+      return parsed.searchParams.get("imgurl");
+    }
+    // 2. Giphy 網頁網址 (giphy.com/gifs/...-ID) -> 直接轉為 i.giphy.com 動圖網址
+    if (parsed.hostname.includes("giphy.com") && parsed.pathname.includes("/gifs/")) {
+      const parts = parsed.pathname.split("/").filter(Boolean);
+      const slug = parts[parts.length - 1] || "";
+      const id = slug.split("-").pop();
+      if (id) return `https://i.giphy.com/media/${id}/giphy.gif`;
+    }
+    // 3. Imgur 單張網頁網址 (imgur.com/abcde) -> 直接轉為 i.imgur.com/abcde.gif
+    if (
+      (parsed.hostname === "imgur.com" || parsed.hostname === "www.imgur.com") &&
+      !parsed.pathname.includes("/a/") &&
+      !parsed.pathname.includes("/gallery/")
+    ) {
+      const id = parsed.pathname.replace(/^\/+|\/+$/g, "");
+      if (id && !id.includes(".")) {
+        return `https://i.imgur.com/${id}.gif`;
+      }
+    }
+  } catch (e) {}
+
+  return url;
+}
+
+// 當外部 GIF/圖片因防盜連(Referer/CORS)或網頁連結載入失敗時，自動透過無防盜連代理(wsrv.nl 保留GIF動畫幀 n=-1)或擷取真實 GIF
+window.handleMemeImgError = function (imgEl) {
+  if (!imgEl) return;
+  const currentSrc = imgEl.getAttribute("src") || "";
+  if (!currentSrc || currentSrc.startsWith("data:")) return;
+
+  const step = Number(imgEl.dataset.fallbackStep || "0");
+  const rawOrig = imgEl.dataset.origSrc || currentSrc;
+  imgEl.dataset.origSrc = rawOrig;
+
+  if (step === 0) {
+    imgEl.dataset.fallbackStep = "1";
+    // 若為 Tenor 網頁連結 (tenor.com/view/...)，嘗試透過公開代理抓取頁面內的真實 .gif 網址
+    if (rawOrig.includes("tenor.com/view/")) {
+      fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(rawOrig)}`)
+        .then((r) => r.json())
+        .then((data) => {
+          const html = (data && data.contents) || "";
+          const gifMatch =
+            html.match(/https:\/\/media\d*\.tenor\.com\/[^"'\s<>]+\.gif/i) ||
+            html.match(/https:\/\/c\.tenor\.com\/[^"'\s<>]+\.gif/i);
+          if (gifMatch && gifMatch[0]) {
+            imgEl.src = gifMatch[0];
+          } else {
+            imgEl.src = `https://wsrv.nl/?url=${encodeURIComponent(rawOrig)}&n=-1`;
+          }
+        })
+        .catch(() => {
+          imgEl.src = `https://wsrv.nl/?url=${encodeURIComponent(rawOrig)}&n=-1`;
+        });
+      return;
+    }
+    // 一般防盜連圖片/GIF：使用 wsrv.nl 全球圖片代理並加上 &n=-1 完整保留 GIF 動態影格
+    imgEl.src = `https://wsrv.nl/?url=${encodeURIComponent(rawOrig)}&n=-1`;
+  }
+};
+
+function isVideoMediaSrc(src) {
+  if (!src) return false;
+  const s = src.toLowerCase();
+  return s.startsWith("data:video/") || /\.(mp4|webm|mov)(\?|#|$)/i.test(s);
+}
+
+function renderMemeMediaHtml(src, altText = "梗圖", cssClass = "") {
+  if (!src) return "";
+  if (isVideoMediaSrc(src)) {
+    return `<video src="${escapeHtml(src)}" class="${cssClass}" autoplay loop muted playsinline></video>`;
+  }
+  return `<img src="${escapeHtml(src)}" data-orig-src="${escapeHtml(src)}" alt="${escapeHtml(altText)}" class="${cssClass}" referrerpolicy="no-referrer" onerror="window.handleMemeImgError && window.handleMemeImgError(this)" />`;
+}
+
 function getMemeSrcByKey(imgKey, customImgUrl = "") {
-  if (imgKey === "custom") return (customImgUrl || "").trim();
+  if (imgKey === "custom") return normalizeMemeUrl(customImgUrl);
   if (imgKey === "gte90") return typeof IMG_GTE_90_DATA_URI !== "undefined" ? IMG_GTE_90_DATA_URI : "gte90.jpg";
   if (imgKey === "lt90") return typeof IMG_LT_90_DATA_URI !== "undefined" ? IMG_LT_90_DATA_URI : "lt90.jpg";
   if (imgKey === "hamster") return typeof HAMSTER_IMG_DATA_URI !== "undefined" ? HAMSTER_IMG_DATA_URI : "hamster.png";
@@ -684,7 +829,7 @@ function renderReactionEditorTable(customRules = null) {
     tr.className = "reaction-edit-row";
     const currentSrc = getMemeSrcByKey(rule.imgKey, rule.customImgUrl);
     const thumbHtml = currentSrc
-      ? `<img src="${currentSrc}" alt="預覽圖" />`
+      ? renderMemeMediaHtml(currentSrc, "預覽圖", "")
       : `<span>無圖片</span>`;
     const isDataUri = (rule.customImgUrl || "").startsWith("data:");
     const displayCustomVal = isDataUri ? "（已上傳本機圖片/GIF）" : (rule.customImgUrl || "");
@@ -718,16 +863,16 @@ function renderReactionEditorTable(customRules = null) {
                 <option value="custom" ${rule.imgKey === "custom" ? "selected" : ""}>✨ 自訂上傳 / 網址</option>
                 <option value="none" ${rule.imgKey === "none" ? "selected" : ""}>🚫 不顯示圖片</option>
               </select>
-              <label class="btn btn-sm btn-primary meme-upload-label" title="從電腦或手機選擇迷因圖片或GIF">
+              <label class="btn btn-sm btn-primary meme-upload-label" title="從電腦或手機選擇迷因圖片、GIF動圖或MP4短片">
                 📁 上傳
-                <input type="file" accept="image/*" class="react-input-file hidden" data-idx="${idx}" />
+                <input type="file" accept="image/*,video/mp4,video/webm,.gif" class="react-input-file hidden" data-idx="${idx}" />
               </label>
             </div>
             <input
               type="text"
               class="react-input-custom-url"
               data-idx="${idx}"
-              placeholder="🔗 貼上迷因圖片/GIF網址 https://... 或點擊上方📁上傳"
+              placeholder="🔗 貼上 GIF / 圖片網址 (支援 Google搜圖/Giphy/Imgur) 或點上方📁上傳"
               value="${escapeHtml(displayCustomVal)}"
             />
           </div>
@@ -757,31 +902,34 @@ function renderReactionEditorTable(customRules = null) {
       const src = getMemeSrcByKey(sel.value, customVal);
       const thumbBox = document.getElementById(`meme-thumb-${idx}`);
       if (thumbBox) {
-        thumbBox.innerHTML = src ? `<img src="${src}" alt="預覽圖" />` : `<span>無圖片</span>`;
+        thumbBox.innerHTML = src ? renderMemeMediaHtml(src, "預覽圖", "") : `<span>無圖片</span>`;
       }
     });
   });
 
-  // 貼上自訂圖片/GIF網址時自動切換為「自訂」並即時預覽
+  // 貼上自訂圖片/GIF網址時自動轉換並切換為「自訂」即時預覽
   tbody.querySelectorAll(".react-input-custom-url").forEach((inp) => {
     inp.addEventListener("input", () => {
       const idx = Number(inp.dataset.idx);
       const tr = inp.closest("tr");
       const sel = tr.querySelector(".react-input-img");
-      const val = inp.value.trim();
+      const normalized = normalizeMemeUrl(inp.value.trim());
+      if (normalized && normalized !== inp.value.trim() && !normalized.startsWith("data:")) {
+        inp.value = normalized;
+      }
       delete inp.dataset.uploadedDataUri;
-      if (val && sel) {
+      if (normalized && sel) {
         sel.value = "custom";
       }
-      const src = getMemeSrcByKey(sel ? sel.value : "custom", val);
+      const src = getMemeSrcByKey(sel ? sel.value : "custom", normalized);
       const thumbBox = document.getElementById(`meme-thumb-${idx}`);
       if (thumbBox) {
-        thumbBox.innerHTML = src ? `<img src="${src}" alt="預覽圖" />` : `<span>無圖片</span>`;
+        thumbBox.innerHTML = src ? renderMemeMediaHtml(src, "預覽圖", "") : `<span>無圖片</span>`;
       }
     });
   });
 
-  // 上傳本機圖片或 GIF 檔案時自動轉為 Base64 Data URI 並即時預覽
+  // 上傳本機圖片、GIF 或 MP4 短片時自動轉為 Data URI 並存入 IndexedDB（不限 5MB）
   tbody.querySelectorAll(".react-input-file").forEach((fileInput) => {
     fileInput.addEventListener("change", (e) => {
       const file = e.target.files && e.target.files[0];
@@ -801,7 +949,7 @@ function renderReactionEditorTable(customRules = null) {
           urlInput.value = `（已上傳：${file.name}）`;
         }
         if (thumbBox) {
-          thumbBox.innerHTML = `<img src="${dataUri}" alt="預覽圖" />`;
+          thumbBox.innerHTML = renderMemeMediaHtml(dataUri, "預覽圖", "");
         }
         saveReactionTableFromDOM(false);
       };
@@ -830,7 +978,7 @@ function renderReactionEditorTable(customRules = null) {
       }
       const idx = Number(btn.dataset.idx);
       current.splice(idx, 1);
-      localStorage.setItem("sv_reaction_rules", JSON.stringify(current));
+      saveRulesToStorage(current);
       renderReactionEditorTable(current);
       renderMemeTestButtons();
     });
@@ -858,9 +1006,10 @@ function collectReactionRulesFromDOM() {
     const text = textEl ? textEl.value : "";
     const durationSec = Math.max(1, Number(secEl ? secEl.value : 5) || 5);
     const imgKey = imgEl ? imgEl.value : "none";
-    const customImgUrl =
+    const rawCustom =
       (customUrlEl && customUrlEl.dataset.uploadedDataUri) ||
       (customUrlEl && !customUrlEl.value.startsWith("（已上傳") ? customUrlEl.value.trim() : "");
+    const customImgUrl = normalizeMemeUrl(rawCustom);
     const bannerClass = minScore >= 90 ? "roast-peak" : maxScore < 70 ? "roast-severe" : "";
 
     newRules.push({
@@ -881,16 +1030,12 @@ function collectReactionRulesFromDOM() {
 function saveReactionTableFromDOM(showAlert = true) {
   const newRules = collectReactionRulesFromDOM();
   if (newRules.length > 0) {
-    try {
-      localStorage.setItem("sv_reaction_rules", JSON.stringify(newRules));
-    } catch (e) {
-      alert("⚠️ 上傳的圖片檔案過大，超出瀏覽器儲存空間上限，建議使用較小的圖片或直接貼上圖片網址！");
-    }
+    saveRulesToStorage(newRules);
     renderReactionEditorTable(newRules);
     renderMemeTestButtons();
   }
   if (showAlert) {
-    alert("✅ 已儲存分數區間、台詞與迷因梗圖設定！");
+    alert("✅ 已儲存分數區間、台詞與迷因 GIF 設定！");
   }
   return newRules;
 }
@@ -919,9 +1064,8 @@ function triggerRoastPopups(score) {
   const banner = document.createElement("div");
   banner.className = `roast-banner ${matched.bannerClass || ""}`.trim();
   const imgSrc = getMemeSrcByKey(matched.imgKey, matched.customImgUrl);
-  const imgHtml = imgSrc
-    ? `<img src="${imgSrc}" alt="${escapeHtml(matched.label)}" class="${matched.imgKey === "hamster" ? "roast-hamster-img" : "roast-meme-img"}" />`
-    : "";
+  const mediaClass = matched.imgKey === "hamster" ? "roast-hamster-img" : "roast-meme-img";
+  const imgHtml = imgSrc ? renderMemeMediaHtml(imgSrc, matched.label, mediaClass) : "";
   const durSec = Math.max(1, Number(matched.durationSec) || 5);
 
   banner.innerHTML = `
@@ -1454,7 +1598,14 @@ function bindEvents() {
   const btnResetReactions = document.getElementById("btn-reset-reactions");
   if (btnResetReactions) {
     btnResetReactions.addEventListener("click", () => {
+      window._cachedReactionRules = null;
       localStorage.removeItem("sv_reaction_rules");
+      openReactionIDB()
+        .then((db) => {
+          const tx = db.transaction("rules_store", "readwrite");
+          tx.objectStore("rules_store").delete("current_rules");
+        })
+        .catch(() => {});
       renderReactionEditorTable();
       renderMemeTestButtons();
     });
