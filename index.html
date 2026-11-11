@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🌍 世界街景猜國家 — 隨機街景車大挑戰</title>
+  <!-- Leaflet 世界小地圖樣式 (Cloudflare CDN) -->
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"
+  />
+  <link rel="stylesheet" href="style.css?v=7" />
+</head>
+<body>
+  <!-- 街景主畫面 -->
+  <div id="streetview-wrapper">
+    <!-- 左上角防劇透遮罩 兼 階段線索提示區（同時擋住左上角街景地址卡並節省空間） -->
+    <div id="spoiler-shield">
+      <div class="shield-header">
+        <span class="shield-title">💡 階段線索提示</span>
+        <div class="shield-actions">
+          <button id="btn-hint-continent" class="btn btn-sm btn-warning" title="使用此提示本題得分打8折">提示洲別 (8折)</button>
+          <button id="btn-hint-clue" class="btn btn-sm btn-warning" title="使用此提示本題得分打8折">提示特徵 (8折)</button>
+        </div>
+      </div>
+      <div id="hints-container" class="hints-list"></div>
+    </div>
+
+    <!-- 右下角防誤觸遮罩 -->
+    <div id="bottom-shield"></div>
+
+    <!-- 免 API Key Google 街景內嵌框架 -->
+    <iframe
+      id="streetview-iframe"
+      src=""
+      allowfullscreen=""
+      loading="lazy"
+      referrerpolicy="no-referrer-when-downgrade"
+    ></iframe>
+
+    <!-- 官方 Google Maps JS SDK 容器（填入 API Key 後自動切換） -->
+    <div id="streetview-sdk" class="hidden"></div>
+  </div>
+
+  <!-- 頂部控制列 -->
+  <header id="top-bar">
+    <!-- 題號、目前輪流組別、隨機生成出題與回起點 -->
+    <div class="glass-card round-controls">
+      <span id="round-indicator" class="round-badge">🎯 第 1 題</span>
+      <span id="turn-indicator" class="turn-badge">🎤 輪到：第一小隊</span>
+      <button id="btn-random" class="btn btn-primary" style="font-size: 0.95rem; padding: 7px 14px;">
+        🎲 隨機生成下一題（換下一組）
+      </button>
+      <button id="btn-reset-pos" class="btn" title="迷路時回到初始起點">🧭 回起點</button>
+    </div>
+
+    <!-- 固定 120 秒倒數計時器（時間到自動揭曉答案） -->
+    <div class="glass-card timer-box">
+      <span>⏱ 倒數</span>
+      <div id="timer-display">02:00</div>
+      <button id="btn-timer-toggle" class="btn btn-sm">⏸ 暫停</button>
+    </div>
+
+    <!-- 揭曉答案、設定與遊戲結束 -->
+    <div class="glass-card round-controls">
+      <button id="btn-reveal" class="btn btn-success" style="font-size: 0.98rem;">
+        🎉 揭曉答案（自動計分）
+      </button>
+      <button id="btn-open-settings" class="btn" title="設定">⚙️ 設定</button>
+      <button id="btn-end-game" class="btn btn-end-game" title="結束遊戲並結算前三名頒獎台">
+        🏁 遊戲結束
+      </button>
+    </div>
+  </header>
+
+  <!-- 左側面板：可收合的小隊計分板（緊接在左上角遮罩提示區下方） -->
+  <aside id="left-sidebar" class="glass-card">
+    <div class="panel-header" style="margin-bottom: 6px;">
+      <span>🏆 輪流計分板</span>
+      <div style="display: flex; gap: 4px;">
+        <button id="btn-add-team" class="btn btn-sm">+ 新增</button>
+        <button id="btn-reset-scores" class="btn btn-sm">歸零</button>
+        <button id="btn-toggle-scoreboard" class="btn btn-sm">_ 收合</button>
+      </div>
+    </div>
+    <div id="scoreboard-body">
+      <div id="teams-list"></div>
+      <div class="help-note" style="margin-top: 8px;">
+        💡 每題自動輪流換下一組計分；調整分數或揭曉答案皆會彈出對應梗圖！
+      </div>
+      <div class="meme-test-bar" style="margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.12);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+          <span style="font-size: 0.78rem; color: #94a3b8;">🎭 點擊立即測試各分數梗圖：</span>
+          <button id="btn-open-reaction-editor" class="btn btn-sm" style="padding: 2px 7px; font-size: 0.75rem;">✏️ 編輯反應表</button>
+        </div>
+        <div style="display: flex; flex-wrap: wrap; gap: 4px;">
+          <button class="btn btn-sm btn-success" data-test-score="95">≧90</button>
+          <button class="btn btn-sm btn-primary" data-test-score="85">＜90</button>
+          <button class="btn btn-sm btn-warning" data-test-score="75">＜80</button>
+          <button class="btn btn-sm" data-test-score="65">＜70</button>
+          <button class="btn btn-sm" data-test-score="55">＜60倉鼠</button>
+          <button class="btn btn-sm btn-danger" data-test-score="45">＜50</button>
+          <button class="btn btn-sm btn-danger" data-test-score="30">＜40</button>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- 右下角世界小地圖（可點擊插旗猜位置並算距離誤差） -->
+  <div id="minimap-panel" class="glass-card">
+    <div class="panel-header" style="margin-bottom: 4px;">
+      <span>🗺️ 世界地圖插旗猜測</span>
+      <div style="display: flex; gap: 4px;">
+        <button id="btn-switch-tiles" class="btn btn-sm" title="切換地圖圖資來源">🌐 換圖資</button>
+        <button id="btn-expand-map" class="btn btn-sm">🔍 放大/還原</button>
+        <button id="btn-minimize-map" class="btn btn-sm">_ 收合</button>
+      </div>
+    </div>
+    <div id="guess-map"></div>
+    <div class="minimap-footer">
+      <span id="minimap-status">點擊地圖插旗猜位置</span>
+      <span>單次最高 100｜總分上限 999</span>
+    </div>
+  </div>
+
+  <!-- 遊戲結束：前三名頒獎台動畫結算視窗 -->
+  <div id="podium-modal" class="modal-backdrop hidden">
+    <div id="confetti-container" class="confetti-container"></div>
+    <div class="podium-box">
+      <div class="podium-title">🏆 遊戲結束・總成績榮耀頒獎台 🏆</div>
+      <div class="podium-subtitle" id="podium-round-summary">本場挑戰圓滿結束！恭喜以下獲勝隊伍！</div>
+
+      <!-- 頒獎台主舞台（左：第2名、中：第1名、右：第3名） -->
+      <div id="podium-stage" class="podium-stage"></div>
+
+      <!-- 第 4 名以後其他隊伍列表 -->
+      <div id="podium-others" class="podium-others"></div>
+
+      <div class="podium-actions">
+        <button id="btn-podium-restart" class="btn btn-primary" style="font-size: 1rem; padding: 10px 20px;">
+          🔄 總分歸零・開始新一局
+        </button>
+        <button id="btn-podium-close" class="btn" style="font-size: 1rem; padding: 10px 18px;">
+          ✕ 關閉視窗（保留分數繼續玩）
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 低分搞笑吐槽彈出視窗容器（低於80分顯示5秒、低於70分顯示10秒） -->
+  <div id="roast-container"></div>
+
+  <!-- 答案揭曉卡片 -->
+  <div id="answer-modal" class="glass-card hidden">
+    <div class="answer-header">
+      <div>
+        <div id="answer-country" class="answer-country">🇯🇵 日本</div>
+        <div id="answer-city" class="answer-city">📍 東京</div>
+      </div>
+      <div style="display: flex; gap: 8px;">
+        <button id="btn-answer-next" class="btn btn-primary">🎲 隨機下一題（換下一組）➡</button>
+        <button id="btn-close-answer" class="btn">✕</button>
+      </div>
+    </div>
+    <div id="distance-result" class="distance-result"></div>
+    <div id="answer-fact" class="answer-fact"></div>
+  </div>
+
+  <!-- Google API Key 與隨機範圍設定視窗 -->
+  <div id="settings-modal" class="modal-backdrop hidden">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h2>⚙️ 即時隨機街景車設定</h2>
+        <button id="btn-close-settings" class="btn">✕ 關閉</button>
+      </div>
+      <div class="modal-body">
+        <!-- 可編輯的分數顯示反應表格 -->
+        <div class="form-group">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <label>🎭 分數顯示反應設定表（可直接編輯修改台詞、秒數與梗圖）</label>
+            <div style="display: flex; gap: 6px;">
+              <button id="btn-save-reactions" class="btn btn-sm btn-primary">💾 儲存修改</button>
+              <button id="btn-reset-reactions" class="btn btn-sm">↺ 還原預設</button>
+            </div>
+          </div>
+          <div class="reaction-table-wrapper">
+            <table class="reaction-edit-table">
+              <thead>
+                <tr>
+                  <th style="width: 110px;">分數區間</th>
+                  <th>顯示台詞文字（可直接打字修改）</th>
+                  <th style="width: 72px;">秒數</th>
+                  <th style="width: 135px;">搭配梗圖</th>
+                  <th style="width: 58px;">預覽</th>
+                </tr>
+              </thead>
+              <tbody id="reaction-table-tbody"></tbody>
+            </table>
+          </div>
+          <div class="help-note">
+            💡 修改後點擊「💾 儲存修改」即會自動生效並記憶於瀏覽器中；點擊「預覽」可立即在畫面上測試該區間的彈出效果！
+          </div>
+        </div>
+
+        <hr style="border-color: rgba(255,255,255,0.1);" />
+
+        <!-- 洲別範圍篩選 -->
+        <div class="form-group">
+          <label>🌍 即時隨機生成範圍（預設：全球五大洲隨機）</label>
+          <select id="select-region-filter">
+            <option value="all" selected>🌐 全球隨機（所有洲別）</option>
+            <option value="亞洲">🏯 僅限亞洲</option>
+            <option value="歐洲">🏰 僅限歐洲</option>
+            <option value="北美洲">🗽 僅限北美洲</option>
+            <option value="南美洲">🦙 僅限南美洲</option>
+            <option value="大洋洲">🦘 僅限大洋洲</option>
+            <option value="非洲">🦁 僅限非洲</option>
+          </select>
+          <div class="help-note">
+            每次出題皆會動態隨機生成全新座標，並透過道路網自動吸附至可移動的 Google 街景車公路中央，絕不重複！
+          </div>
+        </div>
+
+        <hr style="border-color: rgba(255,255,255,0.1);" />
+
+        <!-- 街景模式設定 -->
+        <div class="form-group">
+          <label>🔑 Google Maps API Key（選填 — 不填即可直接免金鑰遊玩）</label>
+          <div style="display: flex; gap: 8px;">
+            <input
+              type="text"
+              id="input-apikey"
+              style="flex: 1;"
+              placeholder="選填：貼上 AIzaSy... 金鑰可啟用原生無路標 SDK 模式；留空則使用免金鑰遮罩模式"
+            />
+            <button id="btn-save-apikey" class="btn btn-primary">儲存切換</button>
+          </div>
+          <div class="help-note">
+            • <strong>免金鑰模式（預設）</strong>：完全免費、免註冊即可 360° 旋轉與沿馬路移動，左上角「線索提示區」會自動擋住預設地名卡。<br />
+            • <strong>API Key 專家模式</strong>：若填入 Google Maps JavaScript API Key，將自動關閉街景地面上的道路名稱（<code>showRoadLabels: false</code>）。
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Leaflet JS (Cloudflare CDN) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+  <script src="app.js?v=7"></script>
+</body>
+</html>
