@@ -740,8 +740,8 @@ window.handleMemeImgError = function (imgEl) {
 
   if (step === 0) {
     imgEl.dataset.fallbackStep = "1";
-    // 若為 Tenor 網頁連結 (tenor.com/view/...)，嘗試透過公開代理抓取頁面內的真實 .gif 網址
-    if (rawOrig.includes("tenor.com/view/")) {
+    // 若為 Tenor 網頁連結 (含 tenor.com/zh-TW/view/... 或 tenor.com/view/...)，自動抓取頁面內的真實 .gif 網址
+    if (rawOrig.includes("tenor.com/") && rawOrig.includes("/view/")) {
       fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(rawOrig)}`)
         .then((r) => r.json())
         .then((data) => {
@@ -780,7 +780,11 @@ function renderMemeMediaHtml(src, altText = "梗圖", cssClass = "") {
 }
 
 function getMemeSrcByKey(imgKey, customImgUrl = "") {
-  if (imgKey === "custom") return normalizeMemeUrl(customImgUrl);
+  if (imgKey === "none") return "";
+  const trimmedCustom = customImgUrl ? String(customImgUrl).trim() : "";
+  if (imgKey === "custom" || trimmedCustom !== "") {
+    if (trimmedCustom !== "") return normalizeMemeUrl(trimmedCustom);
+  }
   if (imgKey === "gte90") return typeof IMG_GTE_90_DATA_URI !== "undefined" ? IMG_GTE_90_DATA_URI : "gte90.jpg";
   if (imgKey === "lt90") return typeof IMG_LT_90_DATA_URI !== "undefined" ? IMG_LT_90_DATA_URI : "lt90.jpg";
   if (imgKey === "hamster") return typeof HAMSTER_IMG_DATA_URI !== "undefined" ? HAMSTER_IMG_DATA_URI : "hamster.png";
@@ -827,7 +831,9 @@ function renderReactionEditorTable(customRules = null) {
   rules.forEach((rule, idx) => {
     const tr = document.createElement("tr");
     tr.className = "reaction-edit-row";
-    const currentSrc = getMemeSrcByKey(rule.imgKey, rule.customImgUrl);
+    const hasCustom = Boolean(rule.customImgUrl && String(rule.customImgUrl).trim() !== "");
+    const effectiveKey = rule.imgKey === "none" ? "none" : hasCustom ? "custom" : rule.imgKey;
+    const currentSrc = getMemeSrcByKey(effectiveKey, rule.customImgUrl);
     const thumbHtml = currentSrc
       ? renderMemeMediaHtml(currentSrc, "預覽圖", "")
       : `<span>無圖片</span>`;
@@ -855,13 +861,13 @@ function renderReactionEditorTable(customRules = null) {
           <div class="meme-edit-controls">
             <div class="meme-upload-row">
               <select class="react-input-img" data-idx="${idx}" style="flex: 1;">
-                <option value="gte90" ${rule.imgKey === "gte90" ? "selected" : ""}>喬巴 (It's so peak!)</option>
-                <option value="lt90" ${rule.imgKey === "lt90" ? "selected" : ""}>銀時握拳 (就這?)</option>
-                <option value="hamster" ${rule.imgKey === "hamster" ? "selected" : ""}>爆笑倉鼠貼圖</option>
-                <option value="lt50" ${rule.imgKey === "lt50" ? "selected" : ""}>銀魂三人嘲諷臉</option>
-                <option value="lt40" ${rule.imgKey === "lt40" ? "selected" : ""}>銀時黑化陰影臉</option>
-                <option value="custom" ${rule.imgKey === "custom" ? "selected" : ""}>✨ 自訂上傳 / 網址</option>
-                <option value="none" ${rule.imgKey === "none" ? "selected" : ""}>🚫 不顯示圖片</option>
+                <option value="gte90" ${effectiveKey === "gte90" ? "selected" : ""}>喬巴 (It's so peak!)</option>
+                <option value="lt90" ${effectiveKey === "lt90" ? "selected" : ""}>銀時握拳 (就這?)</option>
+                <option value="hamster" ${effectiveKey === "hamster" ? "selected" : ""}>爆笑倉鼠貼圖</option>
+                <option value="lt50" ${effectiveKey === "lt50" ? "selected" : ""}>銀魂三人嘲諷臉</option>
+                <option value="lt40" ${effectiveKey === "lt40" ? "selected" : ""}>銀時黑化陰影臉</option>
+                <option value="custom" ${effectiveKey === "custom" ? "selected" : ""}>✨ 自訂上傳 / 網址</option>
+                <option value="none" ${effectiveKey === "none" ? "selected" : ""}>🚫 不顯示圖片</option>
               </select>
               <label class="btn btn-sm btn-primary meme-upload-label" title="從電腦或手機選擇迷因圖片、GIF動圖或MP4短片">
                 📁 上傳
@@ -872,7 +878,7 @@ function renderReactionEditorTable(customRules = null) {
               type="text"
               class="react-input-custom-url"
               data-idx="${idx}"
-              placeholder="🔗 貼上 GIF / 圖片網址 (支援 Google搜圖/Giphy/Imgur) 或點上方📁上傳"
+              placeholder="🔗 貼上 GIF / 圖片網址 (支援 Google搜圖/Giphy/Imgur/Tenor) 或點上方📁上傳"
               value="${escapeHtml(displayCustomVal)}"
             />
           </div>
@@ -892,22 +898,38 @@ function renderReactionEditorTable(customRules = null) {
     tbody.appendChild(tr);
   });
 
-  // 即時切換下拉選單時更新縮圖預覽
+  // 欄位變更時即時自動存檔，避免忘記按儲存
+  tbody.querySelectorAll(".react-input-min, .react-input-max, .react-input-text, .react-input-sec").forEach((inp) => {
+    inp.addEventListener("change", () => {
+      const current = collectReactionRulesFromDOM();
+      saveRulesToStorage(current);
+      renderMemeTestButtons();
+    });
+  });
+
+  // 即時切換下拉選單時更新縮圖預覽並自動儲存
   tbody.querySelectorAll(".react-input-img").forEach((sel) => {
     sel.addEventListener("change", () => {
       const idx = Number(sel.dataset.idx);
       const tr = sel.closest("tr");
       const urlInput = tr.querySelector(".react-input-custom-url");
+      if (sel.value !== "custom" && urlInput) {
+        urlInput.value = "";
+        delete urlInput.dataset.uploadedDataUri;
+      }
       const customVal = (urlInput && urlInput.dataset.uploadedDataUri) || (urlInput ? urlInput.value.trim() : "");
       const src = getMemeSrcByKey(sel.value, customVal);
       const thumbBox = document.getElementById(`meme-thumb-${idx}`);
       if (thumbBox) {
         thumbBox.innerHTML = src ? renderMemeMediaHtml(src, "預覽圖", "") : `<span>無圖片</span>`;
       }
+      const current = collectReactionRulesFromDOM();
+      saveRulesToStorage(current);
+      renderMemeTestButtons();
     });
   });
 
-  // 貼上自訂圖片/GIF網址時自動轉換並切換為「自訂」即時預覽
+  // 貼上自訂圖片/GIF網址時自動轉換並切換為「自訂」即時預覽與自動存檔
   tbody.querySelectorAll(".react-input-custom-url").forEach((inp) => {
     inp.addEventListener("input", () => {
       const idx = Number(inp.dataset.idx);
@@ -926,6 +948,9 @@ function renderReactionEditorTable(customRules = null) {
       if (thumbBox) {
         thumbBox.innerHTML = src ? renderMemeMediaHtml(src, "預覽圖", "") : `<span>無圖片</span>`;
       }
+      const current = collectReactionRulesFromDOM();
+      saveRulesToStorage(current);
+      renderMemeTestButtons();
     });
   });
 
@@ -1005,11 +1030,14 @@ function collectReactionRulesFromDOM() {
     }
     const text = textEl ? textEl.value : "";
     const durationSec = Math.max(1, Number(secEl ? secEl.value : 5) || 5);
-    const imgKey = imgEl ? imgEl.value : "none";
     const rawCustom =
       (customUrlEl && customUrlEl.dataset.uploadedDataUri) ||
       (customUrlEl && !customUrlEl.value.startsWith("（已上傳") ? customUrlEl.value.trim() : "");
     const customImgUrl = normalizeMemeUrl(rawCustom);
+    let imgKey = imgEl ? imgEl.value : "none";
+    if (imgKey !== "none" && customImgUrl !== "") {
+      imgKey = "custom";
+    }
     const bannerClass = minScore >= 90 ? "roast-peak" : maxScore < 70 ? "roast-severe" : "";
 
     newRules.push({
@@ -1063,16 +1091,20 @@ function triggerRoastPopups(score) {
 
   const banner = document.createElement("div");
   banner.className = `roast-banner ${matched.bannerClass || ""}`.trim();
+  banner.title = "點擊可立即關閉此彈窗";
   const imgSrc = getMemeSrcByKey(matched.imgKey, matched.customImgUrl);
-  const mediaClass = matched.imgKey === "hamster" ? "roast-hamster-img" : "roast-meme-img";
+  const mediaClass = matched.imgKey === "hamster" && !matched.customImgUrl ? "roast-hamster-img" : "roast-meme-img";
   const imgHtml = imgSrc ? renderMemeMediaHtml(imgSrc, matched.label, mediaClass) : "";
   const durSec = Math.max(1, Number(matched.durationSec) || 5);
 
   banner.innerHTML = `
     ${imgHtml}
     <div>${escapeHtml(matched.text)}</div>
-    <div class="roast-sub">（得分 ${score} 分｜區間：${matched.minScore} ~ ${matched.maxScore} 分｜顯示 ${durSec} 秒）</div>
+    <div class="roast-sub">（得分 ${score} 分｜區間：${matched.minScore} ~ ${matched.maxScore} 分｜顯示 ${durSec} 秒・點擊可關閉）</div>
   `;
+  banner.addEventListener("click", () => {
+    banner.remove();
+  });
   container.appendChild(banner);
 
   const timerId = setTimeout(() => {
