@@ -625,7 +625,7 @@ const DEFAULT_REACTION_RULES = [
 function getReactionRules() {
   try {
     const saved = JSON.parse(localStorage.getItem("sv_reaction_rules") || "null");
-    if (Array.isArray(saved) && saved.length === DEFAULT_REACTION_RULES.length) {
+    if (Array.isArray(saved) && saved.length >= 1) {
       return saved;
     }
   } catch (e) {}
@@ -641,21 +641,58 @@ function getMemeSrcByKey(imgKey) {
   return "";
 }
 
-function renderReactionEditorTable() {
+function renderMemeTestButtons() {
+  const container = document.getElementById("meme-test-buttons");
+  if (!container) return;
+  const rules = getReactionRules();
+  container.innerHTML = "";
+  rules.forEach((rule) => {
+    const btn = document.createElement("button");
+    const midScore = Math.round((Number(rule.minScore) + Number(rule.maxScore)) / 2);
+    const colorClass =
+      rule.minScore >= 90
+        ? "btn-success"
+        : rule.minScore >= 80
+        ? "btn-primary"
+        : rule.minScore >= 70
+        ? "btn-warning"
+        : rule.maxScore < 50
+        ? "btn-danger"
+        : "";
+    btn.className = `btn btn-sm ${colorClass}`.trim();
+    btn.textContent = `${rule.minScore}~${rule.maxScore}分`;
+    btn.title = rule.text;
+    btn.addEventListener("click", () => {
+      playSound(midScore >= 90 ? 880 : 440, 0.12, "triangle");
+      triggerRoastPopups(midScore);
+    });
+    container.appendChild(btn);
+  });
+}
+
+function renderReactionEditorTable(customRules = null) {
   const tbody = document.getElementById("reaction-table-tbody");
   if (!tbody) return;
-  const rules = getReactionRules();
+  const rules = customRules || getReactionRules();
   tbody.innerHTML = "";
 
   rules.forEach((rule, idx) => {
     const tr = document.createElement("tr");
+    tr.className = "reaction-edit-row";
     tr.innerHTML = `
-      <td style="font-weight: 700; color: #fde047; white-space: nowrap;">${escapeHtml(rule.label)}</td>
+      <td>
+        <div style="display: flex; align-items: center; gap: 4px; white-space: nowrap;">
+          <input type="number" class="react-input-min" data-idx="${idx}" min="0" max="999" value="${Number(rule.minScore)}" style="width: 58px; text-align: center;" title="最低分" />
+          <span style="color: #fde047; font-weight: 800;">~</span>
+          <input type="number" class="react-input-max" data-idx="${idx}" min="0" max="999" value="${Number(rule.maxScore)}" style="width: 58px; text-align: center;" title="最高分" />
+          <span style="font-size: 0.78rem; color: #94a3b8;">分</span>
+        </div>
+      </td>
       <td>
         <input type="text" class="react-input-text" data-idx="${idx}" value="${escapeHtml(rule.text)}" />
       </td>
       <td>
-        <input type="number" class="react-input-sec" data-idx="${idx}" min="1" max="30" value="${Number(rule.durationSec) || 5}" />
+        <input type="number" class="react-input-sec" data-idx="${idx}" min="1" max="60" value="${Number(rule.durationSec) || 5}" />
       </td>
       <td>
         <select class="react-input-img" data-idx="${idx}">
@@ -667,8 +704,9 @@ function renderReactionEditorTable() {
           <option value="none" ${rule.imgKey === "none" ? "selected" : ""}>不顯示圖片</option>
         </select>
       </td>
-      <td>
-        <button class="btn btn-sm btn-warning btn-preview-rule" data-score="${rule.minScore + 2}">預覽</button>
+      <td style="white-space: nowrap;">
+        <button class="btn btn-sm btn-warning btn-preview-rule" data-idx="${idx}">預覽</button>
+        <button class="btn btn-sm btn-danger btn-delete-rule" data-idx="${idx}" title="刪除此區間">🗑️</button>
       </td>
     `;
     tbody.appendChild(tr);
@@ -676,31 +714,79 @@ function renderReactionEditorTable() {
 
   tbody.querySelectorAll(".btn-preview-rule").forEach((btn) => {
     btn.addEventListener("click", () => {
-      saveReactionTableFromDOM(false);
-      const s = Number(btn.dataset.score);
-      triggerRoastPopups(s);
+      const updated = saveReactionTableFromDOM(false);
+      const idx = Number(btn.dataset.idx);
+      const targetRule = updated[idx];
+      if (targetRule) {
+        const testScore = Math.round((Number(targetRule.minScore) + Number(targetRule.maxScore)) / 2);
+        triggerRoastPopups(testScore);
+      }
+    });
+  });
+
+  tbody.querySelectorAll(".btn-delete-rule").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const current = collectReactionRulesFromDOM();
+      if (current.length <= 1) {
+        alert("至少需保留一個分數區間！");
+        return;
+      }
+      const idx = Number(btn.dataset.idx);
+      current.splice(idx, 1);
+      localStorage.setItem("sv_reaction_rules", JSON.stringify(current));
+      renderReactionEditorTable(current);
+      renderMemeTestButtons();
     });
   });
 }
 
+function collectReactionRulesFromDOM() {
+  const rows = document.querySelectorAll("#reaction-table-tbody tr.reaction-edit-row");
+  const newRules = [];
+  rows.forEach((tr, idx) => {
+    const minEl = tr.querySelector(".react-input-min");
+    const maxEl = tr.querySelector(".react-input-max");
+    const textEl = tr.querySelector(".react-input-text");
+    const secEl = tr.querySelector(".react-input-sec");
+    const imgEl = tr.querySelector(".react-input-img");
+
+    let minScore = Math.max(0, Number(minEl ? minEl.value : 0));
+    let maxScore = Math.max(0, Number(maxEl ? maxEl.value : 100));
+    if (minScore > maxScore) {
+      const tmp = minScore;
+      minScore = maxScore;
+      maxScore = tmp;
+    }
+    const text = textEl ? textEl.value : "";
+    const durationSec = Math.max(1, Number(secEl ? secEl.value : 5) || 5);
+    const imgKey = imgEl ? imgEl.value : "none";
+    const bannerClass = minScore >= 90 ? "roast-peak" : maxScore < 70 ? "roast-severe" : "";
+
+    newRules.push({
+      id: `r_${idx}_${minScore}_${maxScore}`,
+      label: `${minScore} ~ ${maxScore} 分`,
+      minScore,
+      maxScore,
+      text,
+      durationSec,
+      imgKey,
+      bannerClass
+    });
+  });
+  return newRules;
+}
+
 function saveReactionTableFromDOM(showAlert = true) {
-  const rules = getReactionRules();
-  document.querySelectorAll(".react-input-text").forEach((el) => {
-    const idx = Number(el.dataset.idx);
-    if (rules[idx]) rules[idx].text = el.value;
-  });
-  document.querySelectorAll(".react-input-sec").forEach((el) => {
-    const idx = Number(el.dataset.idx);
-    if (rules[idx]) rules[idx].durationSec = Math.max(1, Number(el.value) || 5);
-  });
-  document.querySelectorAll(".react-input-img").forEach((el) => {
-    const idx = Number(el.dataset.idx);
-    if (rules[idx]) rules[idx].imgKey = el.value;
-  });
-  localStorage.setItem("sv_reaction_rules", JSON.stringify(rules));
-  if (showAlert) {
-    alert("✅ 已儲存分數顯示反應設定表！");
+  const newRules = collectReactionRulesFromDOM();
+  if (newRules.length > 0) {
+    localStorage.setItem("sv_reaction_rules", JSON.stringify(newRules));
+    renderReactionEditorTable(newRules);
+    renderMemeTestButtons();
   }
+  if (showAlert) {
+    alert("✅ 已儲存分數區間與顯示反應設定表！");
+  }
+  return newRules;
 }
 
 let manualScoreRoastTimer = null;
@@ -719,7 +805,7 @@ function triggerRoastPopups(score) {
 
   const rules = getReactionRules();
   const matched =
-    rules.find((r) => score >= r.minScore && score <= r.maxScore) ||
+    rules.find((r) => score >= Number(r.minScore) && score <= Number(r.maxScore)) ||
     (score >= 90 ? rules[0] : rules[rules.length - 1]);
 
   if (!matched) return;
@@ -735,7 +821,7 @@ function triggerRoastPopups(score) {
   banner.innerHTML = `
     ${imgHtml}
     <div>${escapeHtml(matched.text)}</div>
-    <div class="roast-sub">（得分 ${score} 分｜區間：${escapeHtml(matched.label)}｜顯示 ${durSec} 秒）</div>
+    <div class="roast-sub">（得分 ${score} 分｜區間：${matched.minScore} ~ ${matched.maxScore} 分｜顯示 ${durSec} 秒）</div>
   `;
   container.appendChild(banner);
 
@@ -1186,13 +1272,32 @@ function bindEvents() {
   if (btnSaveReactions) {
     btnSaveReactions.addEventListener("click", () => saveReactionTableFromDOM(true));
   }
+  const btnAddReactionRow = document.getElementById("btn-add-reaction-row");
+  if (btnAddReactionRow) {
+    btnAddReactionRow.addEventListener("click", () => {
+      const current = collectReactionRulesFromDOM();
+      current.push({
+        id: "r_new_" + Date.now(),
+        label: "0 ~ 50 分",
+        minScore: 0,
+        maxScore: 50,
+        text: "🎉 自訂新台詞！",
+        durationSec: 5,
+        imgKey: "hamster",
+        bannerClass: ""
+      });
+      renderReactionEditorTable(current);
+    });
+  }
   const btnResetReactions = document.getElementById("btn-reset-reactions");
   if (btnResetReactions) {
     btnResetReactions.addEventListener("click", () => {
       localStorage.removeItem("sv_reaction_rules");
       renderReactionEditorTable();
+      renderMemeTestButtons();
     });
   }
+  renderMemeTestButtons();
 
   document.getElementById("btn-close-settings").addEventListener("click", () => {
     document.getElementById("settings-modal").classList.add("hidden");

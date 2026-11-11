@@ -9,7 +9,7 @@
     rel="stylesheet"
     href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"
   />
-  <link rel="stylesheet" href="style.css?v=7" />
+  <link rel="stylesheet" href="style.css?v=8" />
 </head>
 <body>
   <!-- 街景主畫面 -->
@@ -93,7 +93,7 @@
           <span style="font-size: 0.78rem; color: #94a3b8;">🎭 點擊立即測試各分數梗圖：</span>
           <button id="btn-open-reaction-editor" class="btn btn-sm" style="padding: 2px 7px; font-size: 0.75rem;">✏️ 編輯反應表</button>
         </div>
-        <div style="display: flex; flex-wrap: wrap; gap: 4px;">
+        <div id="meme-test-buttons" style="display: flex; flex-wrap: wrap; gap: 4px;">
           <button class="btn btn-sm btn-success" data-test-score="95">≧90</button>
           <button class="btn btn-sm btn-primary" data-test-score="85">＜90</button>
           <button class="btn btn-sm btn-warning" data-test-score="75">＜80</button>
@@ -176,9 +176,10 @@
       <div class="modal-body">
         <!-- 可編輯的分數顯示反應表格 -->
         <div class="form-group">
-          <div style="display: flex; justify-content: space-between; align-items: center;">
-            <label>🎭 分數顯示反應設定表（可直接編輯修改台詞、秒數與梗圖）</label>
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;">
+            <label>🎭 分數顯示反應設定表（可直接編輯「分數區間」、台詞、秒數與梗圖）</label>
             <div style="display: flex; gap: 6px;">
+              <button id="btn-add-reaction-row" class="btn btn-sm btn-success">➕ 新增區間</button>
               <button id="btn-save-reactions" class="btn btn-sm btn-primary">💾 儲存修改</button>
               <button id="btn-reset-reactions" class="btn btn-sm">↺ 還原預設</button>
             </div>
@@ -187,18 +188,18 @@
             <table class="reaction-edit-table">
               <thead>
                 <tr>
-                  <th style="width: 110px;">分數區間</th>
+                  <th style="width: 155px;">分數區間（最低 ~ 最高）</th>
                   <th>顯示台詞文字（可直接打字修改）</th>
-                  <th style="width: 72px;">秒數</th>
+                  <th style="width: 68px;">秒數</th>
                   <th style="width: 135px;">搭配梗圖</th>
-                  <th style="width: 58px;">預覽</th>
+                  <th style="width: 98px;">預覽 / 刪除</th>
                 </tr>
               </thead>
               <tbody id="reaction-table-tbody"></tbody>
             </table>
           </div>
           <div class="help-note">
-            💡 修改後點擊「💾 儲存修改」即會自動生效並記憶於瀏覽器中；點擊「預覽」可立即在畫面上測試該區間的彈出效果！
+            💡 可直接修改每個區間的「最低分 ~ 最高分」、台詞、秒數與梗圖，也可新增或刪除區間！點擊「💾 儲存修改」即會自動生效。
           </div>
         </div>
 
@@ -246,6 +247,6 @@
 
   <!-- Leaflet JS (Cloudflare CDN) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-  <script src="app.js?v=7"></script>
+  <script src="app.js?v=8"></script>
 </body>
 </html>
