@@ -1578,6 +1578,25 @@ function bindEvents() {
   if (btnSaveReactions) {
     btnSaveReactions.addEventListener("click", () => saveReactionTableFromDOM(true));
   }
+  const btnCopyReactionsJson = document.getElementById("btn-copy-reactions-json");
+  if (btnCopyReactionsJson) {
+    btnCopyReactionsJson.addEventListener("click", () => {
+      const rules = saveReactionTableFromDOM(false);
+      const jsonStr = JSON.stringify(rules, null, 2);
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard
+          .writeText(jsonStr)
+          .then(() => {
+            alert("✅ 已將您編輯好的反應表複製到剪貼簿！\n\n請回到 AI 對話框按 Ctrl+V 貼上並送出，AI 就會把您的設定寫入雲端，讓所有人打開網址都看到這份反應表！");
+          })
+          .catch(() => {
+            prompt("請按 Ctrl+C 複製以下設定代碼並貼給 AI：", jsonStr);
+          });
+      } else {
+        prompt("請按 Ctrl+C 複製以下設定代碼並貼給 AI：", jsonStr);
+      }
+    });
+  }
   const btnAddReactionRow = document.getElementById("btn-add-reaction-row");
   if (btnAddReactionRow) {
     btnAddReactionRow.addEventListener("click", () => {

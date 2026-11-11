@@ -1198,9 +1198,10 @@ textarea:focus {
         <div class="form-group">
           <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;">
             <label>🎭 分數顯示反應設定表（可直接編輯「分數區間」、台詞、秒數與梗圖）</label>
-            <div style="display: flex; gap: 6px;">
+            <div style="display: flex; flex-wrap: wrap; gap: 6px;">
               <button id="btn-add-reaction-row" class="btn btn-sm btn-success">➕ 新增區間</button>
               <button id="btn-save-reactions" class="btn btn-sm btn-primary">💾 儲存修改</button>
+              <button id="btn-copy-reactions-json" class="btn btn-sm btn-warning" title="複製您編輯好的設定代碼，貼到對話框讓 AI 設為所有人打開的預設值">📋 複製設定給 AI 同步公開</button>
               <button id="btn-reset-reactions" class="btn btn-sm">↺ 還原預設</button>
             </div>
           </div>
@@ -2847,6 +2848,25 @@ function bindEvents() {
   const btnSaveReactions = document.getElementById("btn-save-reactions");
   if (btnSaveReactions) {
     btnSaveReactions.addEventListener("click", () => saveReactionTableFromDOM(true));
+  }
+  const btnCopyReactionsJson = document.getElementById("btn-copy-reactions-json");
+  if (btnCopyReactionsJson) {
+    btnCopyReactionsJson.addEventListener("click", () => {
+      const rules = saveReactionTableFromDOM(false);
+      const jsonStr = JSON.stringify(rules, null, 2);
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard
+          .writeText(jsonStr)
+          .then(() => {
+            alert("✅ 已將您編輯好的反應表複製到剪貼簿！\n\n請回到 AI 對話框按 Ctrl+V 貼上並送出，AI 就會把您的設定寫入雲端，讓所有人打開網址都看到這份反應表！");
+          })
+          .catch(() => {
+            prompt("請按 Ctrl+C 複製以下設定代碼並貼給 AI：", jsonStr);
+          });
+      } else {
+        prompt("請按 Ctrl+C 複製以下設定代碼並貼給 AI：", jsonStr);
+      }
+    });
   }
   const btnAddReactionRow = document.getElementById("btn-add-reaction-row");
   if (btnAddReactionRow) {
