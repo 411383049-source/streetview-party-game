@@ -634,7 +634,8 @@ function getReactionRules() {
   return JSON.parse(JSON.stringify(DEFAULT_REACTION_RULES));
 }
 
-function getMemeSrcByKey(imgKey) {
+function getMemeSrcByKey(imgKey, customImgUrl = "") {
+  if (imgKey === "custom") return (customImgUrl || "").trim();
   if (imgKey === "gte90") return typeof IMG_GTE_90_DATA_URI !== "undefined" ? IMG_GTE_90_DATA_URI : "gte90.jpg";
   if (imgKey === "lt90") return typeof IMG_LT_90_DATA_URI !== "undefined" ? IMG_LT_90_DATA_URI : "lt90.jpg";
   if (imgKey === "hamster") return typeof HAMSTER_IMG_DATA_URI !== "undefined" ? HAMSTER_IMG_DATA_URI : "hamster.png";
@@ -681,12 +682,19 @@ function renderReactionEditorTable(customRules = null) {
   rules.forEach((rule, idx) => {
     const tr = document.createElement("tr");
     tr.className = "reaction-edit-row";
+    const currentSrc = getMemeSrcByKey(rule.imgKey, rule.customImgUrl);
+    const thumbHtml = currentSrc
+      ? `<img src="${currentSrc}" alt="預覽圖" />`
+      : `<span>無圖片</span>`;
+    const isDataUri = (rule.customImgUrl || "").startsWith("data:");
+    const displayCustomVal = isDataUri ? "（已上傳本機圖片/GIF）" : (rule.customImgUrl || "");
+
     tr.innerHTML = `
       <td>
         <div style="display: flex; align-items: center; gap: 4px; white-space: nowrap;">
-          <input type="number" class="react-input-min" data-idx="${idx}" min="0" max="999" value="${Number(rule.minScore)}" style="width: 58px; text-align: center;" title="最低分" />
+          <input type="number" class="react-input-min" data-idx="${idx}" min="0" max="999" value="${Number(rule.minScore)}" style="width: 55px; text-align: center;" title="最低分" />
           <span style="color: #fde047; font-weight: 800;">~</span>
-          <input type="number" class="react-input-max" data-idx="${idx}" min="0" max="999" value="${Number(rule.maxScore)}" style="width: 58px; text-align: center;" title="最高分" />
+          <input type="number" class="react-input-max" data-idx="${idx}" min="0" max="999" value="${Number(rule.maxScore)}" style="width: 55px; text-align: center;" title="最高分" />
           <span style="font-size: 0.78rem; color: #94a3b8;">分</span>
         </div>
       </td>
@@ -697,21 +705,108 @@ function renderReactionEditorTable(customRules = null) {
         <input type="number" class="react-input-sec" data-idx="${idx}" min="1" max="60" value="${Number(rule.durationSec) || 5}" />
       </td>
       <td>
-        <select class="react-input-img" data-idx="${idx}">
-          <option value="gte90" ${rule.imgKey === "gte90" ? "selected" : ""}>喬巴 (It's so peak!)</option>
-          <option value="lt90" ${rule.imgKey === "lt90" ? "selected" : ""}>銀時握拳 (就這?)</option>
-          <option value="hamster" ${rule.imgKey === "hamster" ? "selected" : ""}>爆笑倉鼠貼圖</option>
-          <option value="lt50" ${rule.imgKey === "lt50" ? "selected" : ""}>銀魂三人嘲諷臉</option>
-          <option value="lt40" ${rule.imgKey === "lt40" ? "selected" : ""}>銀時黑化陰影臉</option>
-          <option value="none" ${rule.imgKey === "none" ? "selected" : ""}>不顯示圖片</option>
-        </select>
+        <div class="meme-edit-cell">
+          <div class="meme-thumb-box" id="meme-thumb-${idx}">${thumbHtml}</div>
+          <div class="meme-edit-controls">
+            <div class="meme-upload-row">
+              <select class="react-input-img" data-idx="${idx}" style="flex: 1;">
+                <option value="gte90" ${rule.imgKey === "gte90" ? "selected" : ""}>喬巴 (It's so peak!)</option>
+                <option value="lt90" ${rule.imgKey === "lt90" ? "selected" : ""}>銀時握拳 (就這?)</option>
+                <option value="hamster" ${rule.imgKey === "hamster" ? "selected" : ""}>爆笑倉鼠貼圖</option>
+                <option value="lt50" ${rule.imgKey === "lt50" ? "selected" : ""}>銀魂三人嘲諷臉</option>
+                <option value="lt40" ${rule.imgKey === "lt40" ? "selected" : ""}>銀時黑化陰影臉</option>
+                <option value="custom" ${rule.imgKey === "custom" ? "selected" : ""}>✨ 自訂上傳 / 網址</option>
+                <option value="none" ${rule.imgKey === "none" ? "selected" : ""}>🚫 不顯示圖片</option>
+              </select>
+              <label class="btn btn-sm btn-primary meme-upload-label" title="從電腦或手機選擇迷因圖片或GIF">
+                📁 上傳
+                <input type="file" accept="image/*" class="react-input-file hidden" data-idx="${idx}" />
+              </label>
+            </div>
+            <input
+              type="text"
+              class="react-input-custom-url"
+              data-idx="${idx}"
+              placeholder="🔗 貼上迷因圖片/GIF網址 https://... 或點擊上方📁上傳"
+              value="${escapeHtml(displayCustomVal)}"
+            />
+          </div>
+        </div>
       </td>
       <td style="white-space: nowrap;">
         <button class="btn btn-sm btn-warning btn-preview-rule" data-idx="${idx}">預覽</button>
         <button class="btn btn-sm btn-danger btn-delete-rule" data-idx="${idx}" title="刪除此區間">🗑️</button>
       </td>
     `;
+
+    const urlInput = tr.querySelector(".react-input-custom-url");
+    if (isDataUri && urlInput) {
+      urlInput.dataset.uploadedDataUri = rule.customImgUrl;
+    }
+
     tbody.appendChild(tr);
+  });
+
+  // 即時切換下拉選單時更新縮圖預覽
+  tbody.querySelectorAll(".react-input-img").forEach((sel) => {
+    sel.addEventListener("change", () => {
+      const idx = Number(sel.dataset.idx);
+      const tr = sel.closest("tr");
+      const urlInput = tr.querySelector(".react-input-custom-url");
+      const customVal = (urlInput && urlInput.dataset.uploadedDataUri) || (urlInput ? urlInput.value.trim() : "");
+      const src = getMemeSrcByKey(sel.value, customVal);
+      const thumbBox = document.getElementById(`meme-thumb-${idx}`);
+      if (thumbBox) {
+        thumbBox.innerHTML = src ? `<img src="${src}" alt="預覽圖" />` : `<span>無圖片</span>`;
+      }
+    });
+  });
+
+  // 貼上自訂圖片/GIF網址時自動切換為「自訂」並即時預覽
+  tbody.querySelectorAll(".react-input-custom-url").forEach((inp) => {
+    inp.addEventListener("input", () => {
+      const idx = Number(inp.dataset.idx);
+      const tr = inp.closest("tr");
+      const sel = tr.querySelector(".react-input-img");
+      const val = inp.value.trim();
+      delete inp.dataset.uploadedDataUri;
+      if (val && sel) {
+        sel.value = "custom";
+      }
+      const src = getMemeSrcByKey(sel ? sel.value : "custom", val);
+      const thumbBox = document.getElementById(`meme-thumb-${idx}`);
+      if (thumbBox) {
+        thumbBox.innerHTML = src ? `<img src="${src}" alt="預覽圖" />` : `<span>無圖片</span>`;
+      }
+    });
+  });
+
+  // 上傳本機圖片或 GIF 檔案時自動轉為 Base64 Data URI 並即時預覽
+  tbody.querySelectorAll(".react-input-file").forEach((fileInput) => {
+    fileInput.addEventListener("change", (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+      const idx = Number(fileInput.dataset.idx);
+      const tr = fileInput.closest("tr");
+      const sel = tr.querySelector(".react-input-img");
+      const urlInput = tr.querySelector(".react-input-custom-url");
+      const thumbBox = document.getElementById(`meme-thumb-${idx}`);
+
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const dataUri = ev.target.result;
+        if (sel) sel.value = "custom";
+        if (urlInput) {
+          urlInput.dataset.uploadedDataUri = dataUri;
+          urlInput.value = `（已上傳：${file.name}）`;
+        }
+        if (thumbBox) {
+          thumbBox.innerHTML = `<img src="${dataUri}" alt="預覽圖" />`;
+        }
+        saveReactionTableFromDOM(false);
+      };
+      reader.readAsDataURL(file);
+    });
   });
 
   tbody.querySelectorAll(".btn-preview-rule").forEach((btn) => {
@@ -751,6 +846,7 @@ function collectReactionRulesFromDOM() {
     const textEl = tr.querySelector(".react-input-text");
     const secEl = tr.querySelector(".react-input-sec");
     const imgEl = tr.querySelector(".react-input-img");
+    const customUrlEl = tr.querySelector(".react-input-custom-url");
 
     let minScore = Math.max(0, Number(minEl ? minEl.value : 0));
     let maxScore = Math.max(0, Number(maxEl ? maxEl.value : 100));
@@ -762,6 +858,9 @@ function collectReactionRulesFromDOM() {
     const text = textEl ? textEl.value : "";
     const durationSec = Math.max(1, Number(secEl ? secEl.value : 5) || 5);
     const imgKey = imgEl ? imgEl.value : "none";
+    const customImgUrl =
+      (customUrlEl && customUrlEl.dataset.uploadedDataUri) ||
+      (customUrlEl && !customUrlEl.value.startsWith("（已上傳") ? customUrlEl.value.trim() : "");
     const bannerClass = minScore >= 90 ? "roast-peak" : maxScore < 70 ? "roast-severe" : "";
 
     newRules.push({
@@ -772,6 +871,7 @@ function collectReactionRulesFromDOM() {
       text,
       durationSec,
       imgKey,
+      customImgUrl,
       bannerClass
     });
   });
@@ -781,12 +881,16 @@ function collectReactionRulesFromDOM() {
 function saveReactionTableFromDOM(showAlert = true) {
   const newRules = collectReactionRulesFromDOM();
   if (newRules.length > 0) {
-    localStorage.setItem("sv_reaction_rules", JSON.stringify(newRules));
+    try {
+      localStorage.setItem("sv_reaction_rules", JSON.stringify(newRules));
+    } catch (e) {
+      alert("⚠️ 上傳的圖片檔案過大，超出瀏覽器儲存空間上限，建議使用較小的圖片或直接貼上圖片網址！");
+    }
     renderReactionEditorTable(newRules);
     renderMemeTestButtons();
   }
   if (showAlert) {
-    alert("✅ 已儲存分數區間與顯示反應設定表！");
+    alert("✅ 已儲存分數區間、台詞與迷因梗圖設定！");
   }
   return newRules;
 }
@@ -814,7 +918,7 @@ function triggerRoastPopups(score) {
 
   const banner = document.createElement("div");
   banner.className = `roast-banner ${matched.bannerClass || ""}`.trim();
-  const imgSrc = getMemeSrcByKey(matched.imgKey);
+  const imgSrc = getMemeSrcByKey(matched.imgKey, matched.customImgUrl);
   const imgHtml = imgSrc
     ? `<img src="${imgSrc}" alt="${escapeHtml(matched.label)}" class="${matched.imgKey === "hamster" ? "roast-hamster-img" : "roast-meme-img"}" />`
     : "";
