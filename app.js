@@ -95,9 +95,11 @@ let state = {
   usedCoordKeys: [],
   regionFilter: "all",
   apiKey: "",
-  timerDuration: 120,
-  timerRemaining: 120,
+  timerDuration: 180,
+  timerRemaining: 180,
   timerInterval: null,
+  pausedSeconds: 0,
+  pauseInterval: null,
   isTimerRunning: false,
   revealedContinent: false,
   revealedHint: false,
@@ -831,13 +833,14 @@ function triggerRoastPopups(score) {
   roastTimeouts.push(timerId);
 }
 
-// 揭曉答案並自動為當前輪流組別計分（每使用 1 個提示本題得分打 8 折）
+// 揭曉答案並自動為當前輪流組別計分（每使用 1 個提示打 8 折，每暫停 1 秒扣 1 分）
 function revealAnswer() {
   const loc = state.currentLocation;
   if (!loc) return;
 
   const isFirstReveal = !state.revealedAnswer;
   state.revealedAnswer = true;
+  stopPauseCounter();
   stopTimer();
 
   document.getElementById("answer-country").textContent = `${loc.flag || "🏳️"} ${loc.country}`;
@@ -866,11 +869,13 @@ function revealAnswer() {
   let earnedPts = 0;
   const hintsUsed = (state.revealedContinent ? 1 : 0) + (state.revealedHint ? 1 : 0);
   const discountFactor = Math.pow(0.8, hintsUsed);
+  const pausePenalty = state.pausedSeconds || 0;
 
   if (state.guessLatLng) {
     const distKm = (state.guessLatLng.distanceTo(actualLatLng) / 1000).toFixed(1);
     const rawPts = Math.min(100, Math.max(5, Math.round(100 * Math.exp(-distKm / 3500))));
-    earnedPts = Math.round(rawPts * discountFactor);
+    const discountedPts = Math.round(rawPts * discountFactor);
+    earnedPts = Math.max(0, discountedPts - pausePenalty);
 
     if (isFirstReveal && activeTeam) {
       activeTeam.score = Math.min(999, activeTeam.score + earnedPts);
@@ -878,16 +883,20 @@ function revealAnswer() {
       renderTeams();
     }
 
-    const discountText =
-      hintsUsed === 0
-        ? `（未使用提示，原分 100%）`
-        : hintsUsed === 1
-        ? `（💡 使用 1 個提示打 8 折：原 ${rawPts} 分 × 0.8 ＝ +${earnedPts} 分）`
-        : `（💡 使用 2 個提示打 8 折再 8 折：原 ${rawPts} 分 × 0.8 × 0.8 ＝ +${earnedPts} 分）`;
+    const detailParts = [];
+    if (hintsUsed === 1) {
+      detailParts.push(`💡1個提示8折：${rawPts}×0.8=${discountedPts}`);
+    } else if (hintsUsed === 2) {
+      detailParts.push(`💡2個提示8折×8折：${rawPts}×0.64=${discountedPts}`);
+    }
+    if (pausePenalty > 0) {
+      detailParts.push(`⏸暫停${pausePenalty}秒扣${pausePenalty}分`);
+    }
+    const detailStr = detailParts.length > 0 ? `（${detailParts.join("｜")} ➔ 實得 +${earnedPts} 分）` : `（未使用提示與暫停，原分 100%）`;
 
     const teamMsg = activeTeam
-      ? `🎉 已自動為【${activeTeam.name}】+${earnedPts} 分 ${discountText}｜目前總分：${activeTeam.score} / 999`
-      : `本題得分：+${earnedPts} 分 ${discountText}`;
+      ? `🎉 已自動為【${activeTeam.name}】+${earnedPts} 分 ${detailStr}｜目前總分：${activeTeam.score} / 999`
+      : `本題得分：+${earnedPts} 分 ${detailStr}`;
 
     distEl.textContent = `📏 插旗距離正解相差：${Number(distKm).toLocaleString()} 公里 ｜ ${teamMsg}`;
     distEl.classList.remove("hidden");
@@ -902,8 +911,14 @@ function revealAnswer() {
     guessMap.fitBounds(L.latLngBounds([state.guessLatLng, actualLatLng]), { padding: [30, 30] });
   } else {
     earnedPts = 0;
+    if (isFirstReveal && activeTeam && pausePenalty > 0) {
+      activeTeam.score = Math.max(0, activeTeam.score - pausePenalty);
+      saveState();
+      renderTeams();
+    }
     const teamName = activeTeam ? `【${activeTeam.name}】` : "本組";
-    distEl.textContent = `⚠️ ${teamName} 未在時間內於右下角地圖插旗，本題得分 +0 分（可使用左側 +1 / +10 手動加分）`;
+    const pauseMsg = pausePenalty > 0 ? `，且因暫停 ${pausePenalty} 秒倒扣 ${pausePenalty} 分` : "";
+    distEl.textContent = `⚠️ ${teamName} 未在時間內於右下角地圖插旗，本題得分 +0 分${pauseMsg}（可使用左側 +1 / +10 手動加分）`;
     distEl.classList.remove("hidden");
     guessMap.setView(actualLatLng, 4);
   }
@@ -916,22 +931,61 @@ function revealAnswer() {
   playSound(660, 0.15, "triangle");
 }
 
-// 固定 120 秒計時器功能（時間到自動揭曉答案）
+// 固定 3 分鐘 (180 秒) 計時器功能（暫停時每 1 秒扣 1 分，時間到自動揭曉答案）
+function updatePauseBadgeUI(isPausing = false) {
+  const badge = document.getElementById("pause-penalty-badge");
+  if (!badge) return;
+  if ((state.pausedSeconds || 0) > 0 || isPausing) {
+    badge.classList.remove("hidden");
+    badge.classList.toggle("active-pausing", Boolean(isPausing));
+    badge.textContent = `⏸ 暫停 ${state.pausedSeconds || 0}秒 (-${state.pausedSeconds || 0}分)`;
+  } else {
+    badge.classList.add("hidden");
+    badge.classList.remove("active-pausing");
+  }
+}
+
+function startPauseCounter() {
+  stopPauseCounter();
+  if (state.revealedAnswer) return;
+  updatePauseBadgeUI(true);
+  state.pauseInterval = setInterval(() => {
+    if (state.revealedAnswer) {
+      stopPauseCounter();
+      return;
+    }
+    state.pausedSeconds = (state.pausedSeconds || 0) + 1;
+    updatePauseBadgeUI(true);
+    playSound(330, 0.04, "sine");
+  }, 1000);
+}
+
+function stopPauseCounter() {
+  if (state.pauseInterval) {
+    clearInterval(state.pauseInterval);
+    state.pauseInterval = null;
+  }
+  updatePauseBadgeUI(false);
+}
+
 function toggleTimer() {
   if (state.isTimerRunning) {
     stopTimer();
+    startPauseCounter();
   } else {
+    stopPauseCounter();
     startTimer();
   }
 }
 
 function startTimer() {
   if (state.isTimerRunning) return;
+  stopPauseCounter();
   if (state.timerRemaining <= 0) {
     state.timerRemaining = state.timerDuration;
   }
   state.isTimerRunning = true;
-  document.getElementById("btn-timer-toggle").textContent = "⏸ 暫停";
+  document.getElementById("btn-timer-toggle").textContent = "⏸ 暫停 (-1分/秒)";
 
   state.timerInterval = setInterval(() => {
     state.timerRemaining--;
@@ -962,8 +1016,11 @@ function stopTimer() {
 }
 
 function resetAndStartTimer() {
+  stopPauseCounter();
   stopTimer();
-  state.timerRemaining = 120;
+  state.pausedSeconds = 0;
+  updatePauseBadgeUI(false);
+  state.timerRemaining = 180;
   updateTimerUI();
   startTimer();
 }
@@ -1093,6 +1150,7 @@ function launchConfetti() {
 }
 
 function showEndGamePodium() {
+  stopPauseCounter();
   stopTimer();
   clearRoastPopups();
   document.getElementById("answer-modal").classList.add("hidden");

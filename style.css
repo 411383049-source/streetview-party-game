@@ -185,6 +185,23 @@ body {
   50% { transform: scale(1.1); }
 }
 
+.pause-penalty-badge {
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: #fecaca;
+  background: rgba(220, 38, 38, 0.35);
+  border: 1px solid #f87171;
+  padding: 4px 10px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.pause-penalty-badge.active-pausing {
+  background: rgba(220, 38, 38, 0.75);
+  color: #ffffff;
+  animation: pulse 0.8s infinite;
+}
+
 /* 通用按鈕 */
 .btn {
   background: rgba(255, 255, 255, 0.1);
