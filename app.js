@@ -615,16 +615,131 @@ function renderHints() {
 
 // 得分反應與搞笑吐槽彈出顯示（支援於「設定 -> 分數顯示反應設定表」直接編輯修改）
 const DEFAULT_REACTION_RULES = [
-  { id: "r90", label: "90 ~ 100 分（≧90）", minScore: 90, maxScore: 100, text: "🏆 太厲害了!", durationSec: 6, imgKey: "gte90", bannerClass: "roast-peak" },
-  { id: "r80", label: "80 ~ 89 分（＜90）", minScore: 80, maxScore: 89, text: "😏 就這?", durationSec: 5, imgKey: "lt90", bannerClass: "" },
-  { id: "r70", label: "70 ~ 79 分（＜80）", minScore: 70, maxScore: 79, text: "🤣 哈哈哈菜就多練!我老媽都比你會猜", durationSec: 5, imgKey: "lt90", bannerClass: "" },
-  { id: "r60", label: "60 ~ 69 分（＜70）", minScore: 60, maxScore: 69, text: "🙏 至少耶穌跟你媽愛你，別太看不起自己，你只是不太會猜", durationSec: 10, imgKey: "lt90", bannerClass: "roast-severe" },
-  { id: "r50", label: "50 ~ 59 分（＜60）", minScore: 50, maxScore: 59, text: "🙏 至少耶穌跟你媽愛你，別太看不起自己，你只是不太會猜", durationSec: 10, imgKey: "hamster", bannerClass: "roast-severe" },
-  { id: "r40", label: "40 ~ 49 分（＜50）", minScore: 40, maxScore: 49, text: "🙏 至少耶穌跟你媽愛你，別太看不起自己，你只是不太會猜", durationSec: 10, imgKey: "lt50", bannerClass: "roast-severe" },
-  { id: "r0",  label: "0 ~ 39 分（＜40）",  minScore: 0,  maxScore: 39, text: "🙏 至少耶穌跟你媽愛你，別太看不起自己，你只是不太會猜", durationSec: 10, imgKey: "lt40", bannerClass: "roast-severe" }
+  {
+    id: "r_0_100_100",
+    label: "100 ~ 100 分",
+    minScore: 100,
+    maxScore: 100,
+    text: "哈利路亞!老天賞飯吃!THE GOAT!",
+    durationSec: 5,
+    imgKey: "custom",
+    customImgUrl: "memes/r_100.gif",
+    bannerClass: "roast-peak"
+  },
+  {
+    id: "r_8_95_99",
+    label: "95 ~ 99 分",
+    minScore: 95,
+    maxScore: 99,
+    text: "SIUUU!  Absolutely Sensational!",
+    durationSec: 5,
+    imgKey: "custom",
+    customImgUrl: "memes/r_95.gif",
+    bannerClass: "roast-peak"
+  },
+  {
+    id: "r_1_90_94",
+    label: "90 ~ 94 分",
+    minScore: 90,
+    maxScore: 94,
+    text: "🏆 太厲害了!讓我們將榮耀歸與神",
+    durationSec: 5,
+    imgKey: "gte90",
+    customImgUrl: "",
+    bannerClass: "roast-peak"
+  },
+  {
+    id: "r_7_80_89",
+    label: "80 ~ 89 分",
+    minScore: 80,
+    maxScore: 89,
+    text: "還可以啦說得過去",
+    durationSec: 5,
+    imgKey: "lt50",
+    customImgUrl: "",
+    bannerClass: ""
+  },
+  {
+    id: "r_2_70_79",
+    label: "70 ~ 79 分",
+    minScore: 70,
+    maxScore: 79,
+    text: "😏 就這?",
+    durationSec: 5,
+    imgKey: "lt90",
+    customImgUrl: "",
+    bannerClass: ""
+  },
+  {
+    id: "r_3_60_69",
+    label: "60 ~ 69 分",
+    minScore: 60,
+    maxScore: 69,
+    text: "🤣 哈哈哈菜就多練!我阿嬤都比你會猜",
+    durationSec: 5,
+    imgKey: "custom",
+    customImgUrl: "memes/r_60.jpg",
+    bannerClass: "roast-severe"
+  },
+  {
+    id: "r_9_49_50",
+    label: "49 ~ 50 分",
+    minScore: 49,
+    maxScore: 50,
+    text: "挺會掰的",
+    durationSec: 5,
+    imgKey: "custom",
+    customImgUrl: "memes/r_50.jpg",
+    bannerClass: "roast-severe"
+  },
+  {
+    id: "r_4_30_49",
+    label: "30 ~ 49 分",
+    minScore: 30,
+    maxScore: 49,
+    text: "別太看不起自己，至少你不行",
+    durationSec: 5,
+    imgKey: "hamster",
+    customImgUrl: "",
+    bannerClass: "roast-severe"
+  },
+  {
+    id: "r_5_10_29",
+    label: "10 ~ 29 分",
+    minScore: 10,
+    maxScore: 29,
+    text: "你們高中有畢業嗎?",
+    durationSec: 5,
+    imgKey: "custom",
+    customImgUrl: "memes/r_10.gif",
+    bannerClass: "roast-severe"
+  },
+  {
+    id: "r_6_0_9",
+    label: "0 ~ 9 分",
+    minScore: 0,
+    maxScore: 9,
+    text: "好可憐這已經不能開玩笑了",
+    durationSec: 5,
+    imgKey: "custom",
+    customImgUrl: "memes/r_0.jpg",
+    bannerClass: "roast-severe"
+  }
 ];
 
+// 已知網頁連結與對應直接內建 GIF/圖片映射表（確保貼上網頁連結也能 100% 瞬間顯示）
+const KNOWN_MEME_URL_MAP = {
+  "https://tenor.com/view/peak-meme-memes-gif-69220525783045252": "memes/r_100.gif",
+  "https://tenor.com/zh-TW/view/cristiano-ronaldo-siuu-el-bicho-portugal-uzbekistan-gif-18221739838441843832": "memes/r_95.gif",
+  "https://k.sina.cn/article_6429924047_17f40dacf00100omj2.html?from=animation": "memes/r_60.jpg",
+  "https://tenor.com/view/gintoki-angry-weird-face-pointing-gif-13302595": "memes/r_10.gif",
+  "https://truth.bahamut.com.tw/s01/201701/0d6ecbb3a84ca4901e5abd3db11308ab.JPG": "memes/r_0.jpg",
+  "https://i.pinimg.com/736x/0e/5b/a0/0e5ba07ab08e33db4bc1f957dd71bd1e.jpg": "memes/r_50.jpg"
+};
+
 // 支援超大 GIF 檔案儲存的記憶體快取與 IndexedDB（突破 localStorage 5MB 限制）
+const REACTION_STORAGE_KEY = "sv_reaction_rules_v3";
+const REACTION_IDB_KEY = "current_rules_v3";
 window._cachedReactionRules = null;
 
 function openReactionIDB() {
@@ -645,14 +760,14 @@ function openReactionIDB() {
 function saveRulesToStorage(rules) {
   window._cachedReactionRules = JSON.parse(JSON.stringify(rules));
   try {
-    localStorage.setItem("sv_reaction_rules", JSON.stringify(rules));
+    localStorage.setItem(REACTION_STORAGE_KEY, JSON.stringify(rules));
   } catch (e) {
     // 若含超大 GIF 超出 localStorage 5MB，自動改存至 IndexedDB
   }
   openReactionIDB()
     .then((db) => {
       const tx = db.transaction("rules_store", "readwrite");
-      tx.objectStore("rules_store").put(rules, "current_rules");
+      tx.objectStore("rules_store").put(rules, REACTION_IDB_KEY);
     })
     .catch(() => {});
 }
@@ -661,7 +776,7 @@ function loadRulesFromIDBOnStartup() {
   openReactionIDB()
     .then((db) => {
       const tx = db.transaction("rules_store", "readonly");
-      const req = tx.objectStore("rules_store").get("current_rules");
+      const req = tx.objectStore("rules_store").get(REACTION_IDB_KEY);
       req.onsuccess = () => {
         if (Array.isArray(req.result) && req.result.length >= 1) {
           window._cachedReactionRules = req.result;
@@ -678,7 +793,7 @@ function getReactionRules() {
     return JSON.parse(JSON.stringify(window._cachedReactionRules));
   }
   try {
-    const saved = JSON.parse(localStorage.getItem("sv_reaction_rules") || "null");
+    const saved = JSON.parse(localStorage.getItem(REACTION_STORAGE_KEY) || "null");
     if (Array.isArray(saved) && saved.length >= 1) {
       window._cachedReactionRules = saved;
       return JSON.parse(JSON.stringify(saved));
@@ -693,10 +808,18 @@ function normalizeMemeUrl(rawUrl) {
   let url = String(rawUrl).trim();
   if (url.startsWith("data:")) return url;
 
+  if (KNOWN_MEME_URL_MAP[url]) {
+    return KNOWN_MEME_URL_MAP[url];
+  }
+
   // 若貼上的是 <img src="..."> HTML 標籤，自動擷取 src
   const srcMatch = url.match(/src=["']([^"']+)["']/i);
   if (srcMatch && srcMatch[1]) {
     url = srcMatch[1].trim();
+  }
+
+  if (KNOWN_MEME_URL_MAP[url]) {
+    return KNOWN_MEME_URL_MAP[url];
   }
 
   try {
@@ -816,7 +939,7 @@ function renderMemeTestButtons() {
     btn.title = rule.text;
     btn.addEventListener("click", () => {
       playSound(midScore >= 90 ? 880 : 440, 0.12, "triangle");
-      triggerRoastPopups(midScore);
+      triggerRoastPopups(midScore, rule);
     });
     container.appendChild(btn);
   });
@@ -989,7 +1112,7 @@ function renderReactionEditorTable(customRules = null) {
       const targetRule = updated[idx];
       if (targetRule) {
         const testScore = Math.round((Number(targetRule.minScore) + Number(targetRule.maxScore)) / 2);
-        triggerRoastPopups(testScore);
+        triggerRoastPopups(testScore, targetRule);
       }
     });
   });
@@ -1077,15 +1200,28 @@ function clearRoastPopups() {
   if (container) container.innerHTML = "";
 }
 
-function triggerRoastPopups(score) {
+function triggerRoastPopups(score, explicitRule = null) {
   clearRoastPopups();
   const container = document.getElementById("roast-container");
   if (!container) return;
 
   const rules = getReactionRules();
-  const matched =
-    rules.find((r) => score >= Number(r.minScore) && score <= Number(r.maxScore)) ||
-    (score >= 90 ? rules[0] : rules[rules.length - 1]);
+  let matched = explicitRule;
+  if (!matched) {
+    // 優先匹配區間較精準（跨度較小）的規則，例如 49~50 優先於 30~49
+    const candidates = rules.filter((r) => score >= Number(r.minScore) && score <= Number(r.maxScore));
+    if (candidates.length > 0) {
+      candidates.sort((a, b) => (Number(a.maxScore) - Number(a.minScore)) - (Number(b.maxScore) - Number(b.minScore)));
+      matched = candidates[0];
+    } else if (rules.length > 0) {
+      // 若分數落在未定義空隙（例如 51~59），自動找距離最近的區間
+      matched = rules.reduce((best, cur) => {
+        const bestDist = Math.min(Math.abs(score - Number(best.minScore)), Math.abs(score - Number(best.maxScore)));
+        const curDist = Math.min(Math.abs(score - Number(cur.minScore)), Math.abs(score - Number(cur.maxScore)));
+        return curDist < bestDist ? cur : best;
+      }, rules[0]);
+    }
+  }
 
   if (!matched) return;
 
@@ -1650,7 +1786,9 @@ function bindEvents() {
   if (btnResetReactions) {
     btnResetReactions.addEventListener("click", () => {
       window._cachedReactionRules = null;
-      localStorage.removeItem("sv_reaction_rules");
+      localStorage.removeItem(REACTION_STORAGE_KEY);
+      window._cachedReactionRules = null;
+      saveRulesToStorage(DEFAULT_REACTION_RULES);
       openReactionIDB()
         .then((db) => {
           const tx = db.transaction("rules_store", "readwrite");
