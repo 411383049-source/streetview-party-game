@@ -9,7 +9,7 @@
     rel="stylesheet"
     href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"
   />
-  <link rel="stylesheet" href="style.css?v=18" />
+  <link rel="stylesheet" href="style.css?v=19" />
 </head>
 <body>
   <!-- 街景主畫面 -->
@@ -173,19 +173,20 @@
             </div>
           </div>
 
-          <!-- 分數反應風格切換列（支援多套反應風格快速切換與獨立編輯） -->
-          <div class="reaction-style-bar" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; background: rgba(15, 23, 42, 0.72); border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 10px; padding: 8px 12px; margin: 4px 0;">
+          <!-- 分數反應風格切換與編輯列（支援多套反應風格快速切換、直接改名與獨立編輯） -->
+          <div class="reaction-style-bar" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; background: rgba(15, 23, 42, 0.82); border: 1px solid rgba(56, 189, 248, 0.45); border-radius: 10px; padding: 10px 12px; margin: 4px 0;">
             <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 6px;">
-              <span style="font-size: 0.86rem; font-weight: 800; color: #38bdf8;">🎨 目前反應風格：</span>
+              <span style="font-size: 0.86rem; font-weight: 800; color: #38bdf8;">🎨 選擇要使用/編輯的風格：</span>
               <div id="reaction-style-tabs" style="display: flex; flex-wrap: wrap; gap: 6px;">
-                <button type="button" class="btn btn-sm btn-primary style-tab-btn" data-style-id="style1">🔥 風格一（第一套）</button>
+                <button type="button" class="btn btn-sm btn-primary style-tab-btn" data-style-id="style1">🔥 風格一（經典版）</button>
                 <button type="button" class="btn btn-sm style-tab-btn" data-style-id="style2">✨ 風格二（第二套）</button>
                 <button type="button" class="btn btn-sm style-tab-btn" data-style-id="style3">🌟 風格三（第三套）</button>
               </div>
-            </div>
-            <div style="display: flex; align-items: center; gap: 6px;">
               <button type="button" id="btn-cycle-reaction-style" class="btn btn-sm btn-warning" title="一鍵切換到下一套分數反應風格">🔄 切換反應風格</button>
-              <button type="button" id="btn-rename-reaction-style" class="btn btn-sm" title="自訂目前這套風格的名稱">✏️ 改風格名</button>
+            </div>
+            <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 6px;">
+              <span style="font-size: 0.82rem; color: #cbd5e1;">✏️ 目前風格名稱：</span>
+              <input type="text" id="input-current-style-name" value="🔥 風格一（經典版）" style="width: 165px; padding: 4px 8px; font-size: 0.84rem;" title="直接輸入文字即可修改目前這套風格的名稱" />
             </div>
           </div>
           <div class="reaction-table-wrapper">
@@ -251,6 +252,6 @@
 
   <!-- Leaflet JS (Cloudflare CDN) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-  <script src="app.js?v=18"></script>
+  <script src="app.js?v=19"></script>
 </body>
 </html>

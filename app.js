@@ -727,14 +727,18 @@ const DEFAULT_REACTION_RULES = [
   }
 ];
 
-// 第二套預設反應表（供使用者自由改寫第二套風格）
+// 第二套預設反應表（預設對齊 10 個分數區間，供使用者自由改寫第二套、第三套風格的台詞與梗圖）
 const DEFAULT_REACTION_RULES_STYLE2 = [
-  { id: "s2_90", label: "90 ~ 100 分", minScore: 90, maxScore: 100, text: "🏆 太神啦！地理系教授是你？！", durationSec: 5, imgKey: "gte90", customImgUrl: "", bannerClass: "roast-peak" },
-  { id: "s2_80", label: "80 ~ 89 分",  minScore: 80, maxScore: 89,  text: "😎 水喔！差一點就滿分了！", durationSec: 5, imgKey: "lt90", customImgUrl: "", bannerClass: "" },
-  { id: "s2_70", label: "70 ~ 79 分",  minScore: 70, maxScore: 79,  text: "😏 還行還行，有抓到大方向！", durationSec: 5, imgKey: "lt90", customImgUrl: "", bannerClass: "" },
-  { id: "s2_60", label: "60 ~ 69 分",  minScore: 60, maxScore: 69,  text: "🤣 低空飛過及格邊緣！", durationSec: 5, imgKey: "hamster", customImgUrl: "", bannerClass: "roast-severe" },
-  { id: "s2_40", label: "40 ~ 59 分",  minScore: 40, maxScore: 59,  text: "🙏 至少耶穌跟你媽愛你，再接再厲！", durationSec: 6, imgKey: "lt50", customImgUrl: "", bannerClass: "roast-severe" },
-  { id: "s2_0",  label: "0 ~ 39 分",   minScore: 0,  maxScore: 39,  text: "🌍 這是跑到哪個平行宇宙去了？！", durationSec: 6, imgKey: "lt40", customImgUrl: "", bannerClass: "roast-severe" }
+  { id: "s2_0_100_100", label: "100 ~ 100 分", minScore: 100, maxScore: 100, text: "🏆 滿分神人！地理系教授請受我一拜！", durationSec: 5, imgKey: "gte90", customImgUrl: "", bannerClass: "roast-peak" },
+  { id: "s2_1_95_99",   label: "95 ~ 99 分",   minScore: 95,  maxScore: 99,  text: "🔥 太神啦！只差一點點就完全命中！", durationSec: 5, imgKey: "gte90", customImgUrl: "", bannerClass: "roast-peak" },
+  { id: "s2_2_90_94",   label: "90 ~ 94 分",   minScore: 90,  maxScore: 94,  text: "👏 超強發揮！這題根本難不倒你！", durationSec: 5, imgKey: "gte90", customImgUrl: "", bannerClass: "roast-peak" },
+  { id: "s2_3_80_89",   label: "80 ~ 89 分",   minScore: 80,  maxScore: 89,  text: "😎 水喔！方向感非常準！", durationSec: 5, imgKey: "lt90",  customImgUrl: "", bannerClass: "" },
+  { id: "s2_4_70_79",   label: "70 ~ 79 分",   minScore: 70,  maxScore: 79,  text: "😏 還行還行，有抓到大方向！", durationSec: 5, imgKey: "lt90",  customImgUrl: "", bannerClass: "" },
+  { id: "s2_5_60_69",   label: "60 ~ 69 分",   minScore: 60,  maxScore: 69,  text: "🤣 低空飛過及格邊緣！好險好險！", durationSec: 5, imgKey: "hamster", customImgUrl: "", bannerClass: "roast-severe" },
+  { id: "s2_6_49_50",   label: "49 ~ 50 分",   minScore: 49,  maxScore: 50,  text: "🎲 五五波盲猜大師！剛好猜在一半！", durationSec: 5, imgKey: "lt50",  customImgUrl: "", bannerClass: "roast-severe" },
+  { id: "s2_7_30_49",   label: "30 ~ 49 分",   minScore: 30,  maxScore: 49,  text: "🙏 至少耶穌跟你媽愛你，再接再厲！", durationSec: 5, imgKey: "hamster", customImgUrl: "", bannerClass: "roast-severe" },
+  { id: "s2_8_10_29",   label: "10 ~ 29 分",   minScore: 10,  maxScore: 29,  text: "🧭 你的指南針是不是裝反了？", durationSec: 5, imgKey: "lt40",  customImgUrl: "", bannerClass: "roast-severe" },
+  { id: "s2_9_0_9",     label: "0 ~ 9 分",     minScore: 0,   maxScore: 9,   text: "🌍 這是跑到哪個平行宇宙去了？！", durationSec: 5, imgKey: "lt40",  customImgUrl: "", bannerClass: "roast-severe" }
 ];
 
 const DEFAULT_REACTION_PRESETS = {
@@ -763,8 +767,8 @@ const KNOWN_MEME_URL_MAP = {
 };
 
 // 支援多套風格與超大 GIF/MP4 檔案儲存的記憶體快取與 IndexedDB（突破 localStorage 5MB 限制）
-const REACTION_STORAGE_KEY = "sv_reaction_presets_v5";
-const REACTION_IDB_KEY = "current_presets_v5";
+const REACTION_STORAGE_KEY = "sv_reaction_presets_v6";
+const REACTION_IDB_KEY = "current_presets_v6";
 window._cachedReactionPresets = null;
 
 function openReactionIDB() {
@@ -858,12 +862,37 @@ function updateStyleSwitcherUI() {
     } else {
       btn.classList.remove("btn-primary");
     }
+    btn.onclick = () => switchReactionStyle(sid);
   });
 
   const cycleBtn = document.getElementById("btn-cycle-reaction-style");
   if (cycleBtn) {
     const curName = names[activeId] || activeId;
     cycleBtn.textContent = `🔄 切換反應風格（目前：${curName}）`;
+    cycleBtn.onclick = cycleReactionStyle;
+  }
+
+  const nameInput = document.getElementById("input-current-style-name");
+  if (nameInput) {
+    const curName = names[activeId] || activeId;
+    if (document.activeElement !== nameInput) {
+      nameInput.value = curName;
+    }
+    nameInput.oninput = () => {
+      const val = nameInput.value.trim();
+      if (!val) return;
+      const curPresets = getReactionPresets();
+      const curActive = curPresets.activeStyleId || "style1";
+      if (!curPresets.styleNames) curPresets.styleNames = {};
+      curPresets.styleNames[curActive] = val;
+      savePresetsToStorage(curPresets);
+      document.querySelectorAll(".style-tab-btn").forEach((b) => {
+        if (b.dataset.styleId === curActive) b.textContent = val;
+      });
+      if (cycleBtn) {
+        cycleBtn.textContent = `🔄 切換反應風格（目前：${val}）`;
+      }
+    };
   }
 }
 
@@ -2036,6 +2065,9 @@ function bindEvents() {
   const btnOpenEditor = document.getElementById("btn-open-reaction-editor");
   if (btnOpenEditor) btnOpenEditor.addEventListener("click", openSettingsModal);
 
+  // 綁定多套分數反應風格切換與改名輸入框
+  updateStyleSwitcherUI();
+
   const btnSaveReactions = document.getElementById("btn-save-reactions");
   if (btnSaveReactions) {
     btnSaveReactions.addEventListener("click", () => saveReactionTableFromDOM(true));
@@ -2073,6 +2105,7 @@ function bindEvents() {
         imgKey: "hamster",
         bannerClass: ""
       });
+      saveRulesToStorage(current);
       renderReactionEditorTable(current);
     });
   }
