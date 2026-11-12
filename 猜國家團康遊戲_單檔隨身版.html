@@ -1083,11 +1083,12 @@ textarea:focus {
       <span id="pause-penalty-badge" class="pause-penalty-badge hidden">⏸ 暫停 0秒 (-0分)</span>
     </div>
 
-    <!-- 揭曉答案、設定與遊戲結束 -->
+    <!-- 揭曉答案、音樂、設定與遊戲結束 -->
     <div class="glass-card round-controls">
       <button id="btn-reveal" class="btn btn-success" style="font-size: 0.98rem;">
         🎉 揭曉答案（自動計分）
       </button>
+      <button id="btn-bgm-toggle" class="btn" title="開啟 / 靜音背景音樂">🔊 音樂</button>
       <button id="btn-open-settings" class="btn" title="設定">⚙️ 設定</button>
       <button id="btn-end-game" class="btn btn-end-game" title="結束遊戲並結算前三名頒獎台">
         🏁 遊戲結束
@@ -2604,7 +2605,108 @@ function revealAnswer() {
 
   document.getElementById("answer-modal").classList.remove("hidden");
   playSound(660, 0.15, "triangle");
+  playBgmTrack("reveal", true);
 }
+
+// 5 大情境背景音樂控制系統
+const BGM_TRACKS = {
+  normal: {
+    src: "audio/normal.mp3",
+    ytUrl: "https://youtu.be/djV11Xbc914?si=223Ua4MdaWza9ovY",
+    label: "🎵 遊戲背景音樂 (a-ha - Take On Me)"
+  },
+  hint: {
+    src: "audio/hint.mp3",
+    ytUrl: "https://youtu.be/Q4exKwB0WRk?si=JaUHUfgxhEsHuLFw",
+    label: "💡 點擊提示音樂 (CAIN - I'm So Blessed)"
+  },
+  pause: {
+    src: "audio/pause.mp3",
+    ytUrl: "https://youtu.be/qeMFqkcPYcg?si=MUOMEsRqvAJP7j7q",
+    label: "⏸ 時間暫停音樂 (Sweet Dreams)"
+  },
+  last60: {
+    src: "audio/last60.mp3",
+    ytUrl: "https://youtu.be/MW6sp_AXPI0?si=J7ZQ6OcpPa0Hib9A",
+    label: "🔥 倒數 60 秒音樂 (Beautiful Creatures)"
+  },
+  reveal: {
+    src: "audio/reveal.mp3",
+    ytUrl: "https://youtu.be/32mI1Qjy8A4?si=j8lbzgyP3kE8C-8k",
+    label: "🎉 答案揭曉音樂"
+  }
+};
+
+const bgmState = {
+  audio: null,
+  currentKey: "normal",
+  muted: false,
+  volume: 0.55
+};
+
+function ensureBgmAudio() {
+  if (!bgmState.audio) {
+    bgmState.audio = new Audio();
+    bgmState.audio.loop = true;
+    bgmState.audio.volume = bgmState.volume;
+    bgmState.audio.preload = "auto";
+  }
+  return bgmState.audio;
+}
+
+function updateBgmButtonUI() {
+  const btn = document.getElementById("btn-bgm-toggle");
+  if (!btn) return;
+  const info = BGM_TRACKS[bgmState.currentKey] || BGM_TRACKS.normal;
+  btn.textContent = bgmState.muted ? "🔇 靜音" : "🔊 音樂";
+  btn.title = `${info.label}（點擊切換靜音/播放）`;
+}
+
+function playBgmTrack(trackKey, restart = false) {
+  const info = BGM_TRACKS[trackKey];
+  if (!info) return;
+  const audio = ensureBgmAudio();
+  const isSameTrack = bgmState.currentKey === trackKey && audio.src && audio.src.endsWith(info.src);
+  bgmState.currentKey = trackKey;
+  audio.muted = bgmState.muted;
+
+  if (!isSameTrack) {
+    audio.src = info.src;
+    audio.currentTime = 0;
+  } else if (restart) {
+    try {
+      audio.currentTime = 0;
+    } catch (e) {}
+  }
+
+  updateBgmButtonUI();
+  if (!bgmState.muted) {
+    audio.play().catch(() => {
+      // 瀏覽器首次自動播放限制：待使用者在頁面上任意點擊即自動開始播放
+    });
+  }
+}
+
+function toggleBgmMute() {
+  bgmState.muted = !bgmState.muted;
+  const audio = ensureBgmAudio();
+  audio.muted = bgmState.muted;
+  if (bgmState.muted) {
+    audio.pause();
+  } else {
+    audio.play().catch(() => {});
+  }
+  updateBgmButtonUI();
+}
+
+// 使用者首次與頁面互動時自動解鎖瀏覽器音訊播放限制
+function unlockBgmOnInteraction() {
+  if (!bgmState.muted && bgmState.audio && bgmState.audio.paused) {
+    bgmState.audio.play().catch(() => {});
+  }
+}
+window.addEventListener("pointerdown", unlockBgmOnInteraction, { passive: true });
+window.addEventListener("keydown", unlockBgmOnInteraction, { passive: true });
 
 // 固定 3 分鐘 (180 秒) 計時器功能（暫停時每 1 秒扣 1 分，時間到自動揭曉答案）
 function updatePauseBadgeUI(isPausing = false) {
@@ -2624,6 +2726,7 @@ function startPauseCounter() {
   stopPauseCounter();
   if (state.revealedAnswer) return;
   updatePauseBadgeUI(true);
+  playBgmTrack("pause", true);
   state.pauseInterval = setInterval(() => {
     if (state.revealedAnswer) {
       stopPauseCounter();
@@ -2650,6 +2753,15 @@ function toggleTimer() {
   } else {
     stopPauseCounter();
     startTimer();
+    if (!state.revealedAnswer) {
+      if (state.timerRemaining <= 60) {
+        playBgmTrack("last60", false);
+      } else if (state.revealedContinent || state.revealedHint) {
+        playBgmTrack("hint", false);
+      } else {
+        playBgmTrack("normal", false);
+      }
+    }
   }
 }
 
@@ -2665,6 +2777,10 @@ function startTimer() {
   state.timerInterval = setInterval(() => {
     state.timerRemaining--;
     updateTimerUI();
+
+    if (state.timerRemaining === 60 && !state.revealedAnswer) {
+      playBgmTrack("last60", true);
+    }
 
     if (state.timerRemaining <= 5 && state.timerRemaining > 0) {
       playSound(440, 0.08, "sine");
@@ -2697,6 +2813,7 @@ function resetAndStartTimer() {
   updatePauseBadgeUI(false);
   state.timerRemaining = 180;
   updateTimerUI();
+  playBgmTrack("normal", true);
   startTimer();
 }
 
@@ -2899,16 +3016,27 @@ function bindEvents() {
   // 計時器暫停/繼續
   document.getElementById("btn-timer-toggle").addEventListener("click", toggleTimer);
 
-  // 提示與揭曉答案
+  // 提示與揭曉答案（點擊提示立即切換為提示專用背景音樂）
   document.getElementById("btn-hint-continent").addEventListener("click", () => {
     state.revealedContinent = true;
     renderHints();
+    if (!state.revealedAnswer) {
+      playBgmTrack("hint", true);
+    }
   });
 
   document.getElementById("btn-hint-clue").addEventListener("click", () => {
     state.revealedHint = true;
     renderHints();
+    if (!state.revealedAnswer) {
+      playBgmTrack("hint", true);
+    }
   });
+
+  const btnBgmToggle = document.getElementById("btn-bgm-toggle");
+  if (btnBgmToggle) {
+    btnBgmToggle.addEventListener("click", toggleBgmMute);
+  }
 
   document.getElementById("btn-reveal").addEventListener("click", revealAnswer);
   document.getElementById("btn-end-game").addEventListener("click", showEndGamePodium);

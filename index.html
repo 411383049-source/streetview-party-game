@@ -9,7 +9,7 @@
     rel="stylesheet"
     href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"
   />
-  <link rel="stylesheet" href="style.css?v=16" />
+  <link rel="stylesheet" href="style.css?v=17" />
 </head>
 <body>
   <!-- 街景主畫面 -->
@@ -62,11 +62,12 @@
       <span id="pause-penalty-badge" class="pause-penalty-badge hidden">⏸ 暫停 0秒 (-0分)</span>
     </div>
 
-    <!-- 揭曉答案、設定與遊戲結束 -->
+    <!-- 揭曉答案、音樂、設定與遊戲結束 -->
     <div class="glass-card round-controls">
       <button id="btn-reveal" class="btn btn-success" style="font-size: 0.98rem;">
         🎉 揭曉答案（自動計分）
       </button>
+      <button id="btn-bgm-toggle" class="btn" title="開啟 / 靜音背景音樂">🔊 音樂</button>
       <button id="btn-open-settings" class="btn" title="設定">⚙️ 設定</button>
       <button id="btn-end-game" class="btn btn-end-game" title="結束遊戲並結算前三名頒獎台">
         🏁 遊戲結束
@@ -234,6 +235,6 @@
 
   <!-- Leaflet JS (Cloudflare CDN) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-  <script src="app.js?v=16"></script>
+  <script src="app.js?v=17"></script>
 </body>
 </html>
