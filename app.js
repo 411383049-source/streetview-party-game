@@ -613,7 +613,7 @@ function renderHints() {
   syncSidebarPosition();
 }
 
-// 得分反應與搞笑吐槽彈出顯示（支援於「設定 -> 分數顯示反應設定表」直接編輯修改）
+// 得分反應與搞笑吐槽彈出顯示（支援於「設定 -> 分數顯示反應設定表」直接編輯修改與多套風格切換）
 const DEFAULT_REACTION_RULES = [
   {
     id: "r_0_100_100",
@@ -627,7 +627,7 @@ const DEFAULT_REACTION_RULES = [
     bannerClass: "roast-peak"
   },
   {
-    id: "r_8_95_99",
+    id: "r_1_95_99",
     label: "95 ~ 99 分",
     minScore: 95,
     maxScore: 99,
@@ -638,7 +638,7 @@ const DEFAULT_REACTION_RULES = [
     bannerClass: "roast-peak"
   },
   {
-    id: "r_1_90_94",
+    id: "r_2_90_94",
     label: "90 ~ 94 分",
     minScore: 90,
     maxScore: 94,
@@ -649,7 +649,7 @@ const DEFAULT_REACTION_RULES = [
     bannerClass: "roast-peak"
   },
   {
-    id: "r_7_80_89",
+    id: "r_3_80_89",
     label: "80 ~ 89 分",
     minScore: 80,
     maxScore: 89,
@@ -660,7 +660,7 @@ const DEFAULT_REACTION_RULES = [
     bannerClass: ""
   },
   {
-    id: "r_2_70_79",
+    id: "r_4_70_79",
     label: "70 ~ 79 分",
     minScore: 70,
     maxScore: 79,
@@ -671,7 +671,7 @@ const DEFAULT_REACTION_RULES = [
     bannerClass: ""
   },
   {
-    id: "r_3_60_69",
+    id: "r_5_60_69",
     label: "60 ~ 69 分",
     minScore: 60,
     maxScore: 69,
@@ -682,7 +682,7 @@ const DEFAULT_REACTION_RULES = [
     bannerClass: "roast-severe"
   },
   {
-    id: "r_9_49_50",
+    id: "r_6_49_50",
     label: "49 ~ 50 分",
     minScore: 49,
     maxScore: 50,
@@ -693,7 +693,7 @@ const DEFAULT_REACTION_RULES = [
     bannerClass: "roast-severe"
   },
   {
-    id: "r_4_30_49",
+    id: "r_7_30_49",
     label: "30 ~ 49 分",
     minScore: 30,
     maxScore: 49,
@@ -704,7 +704,7 @@ const DEFAULT_REACTION_RULES = [
     bannerClass: "roast-severe"
   },
   {
-    id: "r_5_10_29",
+    id: "r_8_10_29",
     label: "10 ~ 29 分",
     minScore: 10,
     maxScore: 29,
@@ -715,7 +715,7 @@ const DEFAULT_REACTION_RULES = [
     bannerClass: "roast-severe"
   },
   {
-    id: "r_6_0_9",
+    id: "r_9_0_9",
     label: "0 ~ 9 分",
     minScore: 0,
     maxScore: 9,
@@ -727,7 +727,31 @@ const DEFAULT_REACTION_RULES = [
   }
 ];
 
-// 已知網頁連結與對應直接內建 GIF/圖片映射表（確保貼上網頁連結也能 100% 瞬間顯示）
+// 第二套預設反應表（供使用者自由改寫第二套風格）
+const DEFAULT_REACTION_RULES_STYLE2 = [
+  { id: "s2_90", label: "90 ~ 100 分", minScore: 90, maxScore: 100, text: "🏆 太神啦！地理系教授是你？！", durationSec: 5, imgKey: "gte90", customImgUrl: "", bannerClass: "roast-peak" },
+  { id: "s2_80", label: "80 ~ 89 分",  minScore: 80, maxScore: 89,  text: "😎 水喔！差一點就滿分了！", durationSec: 5, imgKey: "lt90", customImgUrl: "", bannerClass: "" },
+  { id: "s2_70", label: "70 ~ 79 分",  minScore: 70, maxScore: 79,  text: "😏 還行還行，有抓到大方向！", durationSec: 5, imgKey: "lt90", customImgUrl: "", bannerClass: "" },
+  { id: "s2_60", label: "60 ~ 69 分",  minScore: 60, maxScore: 69,  text: "🤣 低空飛過及格邊緣！", durationSec: 5, imgKey: "hamster", customImgUrl: "", bannerClass: "roast-severe" },
+  { id: "s2_40", label: "40 ~ 59 分",  minScore: 40, maxScore: 59,  text: "🙏 至少耶穌跟你媽愛你，再接再厲！", durationSec: 6, imgKey: "lt50", customImgUrl: "", bannerClass: "roast-severe" },
+  { id: "s2_0",  label: "0 ~ 39 分",   minScore: 0,  maxScore: 39,  text: "🌍 這是跑到哪個平行宇宙去了？！", durationSec: 6, imgKey: "lt40", customImgUrl: "", bannerClass: "roast-severe" }
+];
+
+const DEFAULT_REACTION_PRESETS = {
+  activeStyleId: "style1",
+  styleNames: {
+    style1: "🔥 風格一（經典版）",
+    style2: "✨ 風格二（第二套）",
+    style3: "🌟 風格三（第三套）"
+  },
+  styles: {
+    style1: DEFAULT_REACTION_RULES,
+    style2: DEFAULT_REACTION_RULES_STYLE2,
+    style3: DEFAULT_REACTION_RULES_STYLE2
+  }
+};
+
+// 已知網頁連結與對應直接內建 GIF/圖片/短片映射表（確保貼上網頁連結也能 100% 瞬間顯示並保留原音）
 const KNOWN_MEME_URL_MAP = {
   "https://pin.it/4EeoixDC3": "memes/r_100.mp4",
   "https://tenor.com/view/peak-meme-memes-gif-69220525783045252": "memes/r_100.gif",
@@ -738,10 +762,10 @@ const KNOWN_MEME_URL_MAP = {
   "https://i.pinimg.com/736x/0e/5b/a0/0e5ba07ab08e33db4bc1f957dd71bd1e.jpg": "memes/r_50.jpg"
 };
 
-// 支援超大 GIF 檔案儲存的記憶體快取與 IndexedDB（突破 localStorage 5MB 限制）
-const REACTION_STORAGE_KEY = "sv_reaction_rules_v4";
-const REACTION_IDB_KEY = "current_rules_v4";
-window._cachedReactionRules = null;
+// 支援多套風格與超大 GIF/MP4 檔案儲存的記憶體快取與 IndexedDB（突破 localStorage 5MB 限制）
+const REACTION_STORAGE_KEY = "sv_reaction_presets_v5";
+const REACTION_IDB_KEY = "current_presets_v5";
+window._cachedReactionPresets = null;
 
 function openReactionIDB() {
   return new Promise((resolve, reject) => {
@@ -758,19 +782,41 @@ function openReactionIDB() {
   });
 }
 
-function saveRulesToStorage(rules) {
-  window._cachedReactionRules = JSON.parse(JSON.stringify(rules));
+function getReactionPresets() {
+  if (window._cachedReactionPresets && window._cachedReactionPresets.styles) {
+    return JSON.parse(JSON.stringify(window._cachedReactionPresets));
+  }
   try {
-    localStorage.setItem(REACTION_STORAGE_KEY, JSON.stringify(rules));
+    const saved = JSON.parse(localStorage.getItem(REACTION_STORAGE_KEY) || "null");
+    if (saved && saved.styles && saved.activeStyleId) {
+      window._cachedReactionPresets = saved;
+      return JSON.parse(JSON.stringify(saved));
+    }
+  } catch (e) {}
+  window._cachedReactionPresets = JSON.parse(JSON.stringify(DEFAULT_REACTION_PRESETS));
+  return JSON.parse(JSON.stringify(window._cachedReactionPresets));
+}
+
+function savePresetsToStorage(presets) {
+  window._cachedReactionPresets = JSON.parse(JSON.stringify(presets));
+  try {
+    localStorage.setItem(REACTION_STORAGE_KEY, JSON.stringify(presets));
   } catch (e) {
-    // 若含超大 GIF 超出 localStorage 5MB，自動改存至 IndexedDB
+    // 若含超大 GIF/MP4 超出 localStorage 5MB，自動改存至 IndexedDB
   }
   openReactionIDB()
     .then((db) => {
       const tx = db.transaction("rules_store", "readwrite");
-      tx.objectStore("rules_store").put(rules, REACTION_IDB_KEY);
+      tx.objectStore("rules_store").put(presets, REACTION_IDB_KEY);
     })
     .catch(() => {});
+}
+
+function saveRulesToStorage(rules) {
+  const presets = getReactionPresets();
+  const activeId = presets.activeStyleId || "style1";
+  presets.styles[activeId] = JSON.parse(JSON.stringify(rules));
+  savePresetsToStorage(presets);
 }
 
 function loadRulesFromIDBOnStartup() {
@@ -779,8 +825,9 @@ function loadRulesFromIDBOnStartup() {
       const tx = db.transaction("rules_store", "readonly");
       const req = tx.objectStore("rules_store").get(REACTION_IDB_KEY);
       req.onsuccess = () => {
-        if (Array.isArray(req.result) && req.result.length >= 1) {
-          window._cachedReactionRules = req.result;
+        if (req.result && req.result.styles) {
+          window._cachedReactionPresets = req.result;
+          updateStyleSwitcherUI();
           renderMemeTestButtons();
         }
       };
@@ -790,17 +837,74 @@ function loadRulesFromIDBOnStartup() {
 setTimeout(loadRulesFromIDBOnStartup, 50);
 
 function getReactionRules() {
-  if (Array.isArray(window._cachedReactionRules) && window._cachedReactionRules.length >= 1) {
-    return JSON.parse(JSON.stringify(window._cachedReactionRules));
-  }
-  try {
-    const saved = JSON.parse(localStorage.getItem(REACTION_STORAGE_KEY) || "null");
-    if (Array.isArray(saved) && saved.length >= 1) {
-      window._cachedReactionRules = saved;
-      return JSON.parse(JSON.stringify(saved));
+  const presets = getReactionPresets();
+  const activeId = presets.activeStyleId || "style1";
+  const rules = presets.styles[activeId] || DEFAULT_REACTION_RULES;
+  return JSON.parse(JSON.stringify(rules));
+}
+
+function updateStyleSwitcherUI() {
+  const presets = getReactionPresets();
+  const activeId = presets.activeStyleId || "style1";
+  const names = presets.styleNames || DEFAULT_REACTION_PRESETS.styleNames;
+
+  document.querySelectorAll(".style-tab-btn").forEach((btn) => {
+    const sid = btn.dataset.styleId;
+    if (names[sid]) {
+      btn.textContent = names[sid];
     }
-  } catch (e) {}
-  return JSON.parse(JSON.stringify(DEFAULT_REACTION_RULES));
+    if (sid === activeId) {
+      btn.classList.add("btn-primary");
+    } else {
+      btn.classList.remove("btn-primary");
+    }
+  });
+
+  const cycleBtn = document.getElementById("btn-cycle-reaction-style");
+  if (cycleBtn) {
+    const curName = names[activeId] || activeId;
+    cycleBtn.textContent = `🔄 切換反應風格（目前：${curName}）`;
+  }
+}
+
+function switchReactionStyle(targetStyleId) {
+  // 切換前先將目前表格內的修改自動存入原風格
+  const tbody = document.getElementById("reaction-table-tbody");
+  if (tbody && tbody.querySelectorAll("tr.reaction-edit-row").length > 0) {
+    const currentRules = collectReactionRulesFromDOM();
+    if (currentRules.length > 0) {
+      saveRulesToStorage(currentRules);
+    }
+  }
+  const presets = getReactionPresets();
+  if (!presets.styles[targetStyleId]) {
+    presets.styles[targetStyleId] = JSON.parse(JSON.stringify(DEFAULT_REACTION_RULES_STYLE2));
+  }
+  presets.activeStyleId = targetStyleId;
+  savePresetsToStorage(presets);
+  updateStyleSwitcherUI();
+  renderReactionEditorTable(presets.styles[targetStyleId]);
+  renderMemeTestButtons();
+}
+
+function cycleReactionStyle() {
+  const order = ["style1", "style2", "style3"];
+  const presets = getReactionPresets();
+  const curIdx = order.indexOf(presets.activeStyleId || "style1");
+  const nextId = order[(curIdx + 1) % order.length];
+  switchReactionStyle(nextId);
+}
+
+function renameCurrentReactionStyle() {
+  const presets = getReactionPresets();
+  const activeId = presets.activeStyleId || "style1";
+  const curName = (presets.styleNames && presets.styleNames[activeId]) || activeId;
+  const newName = prompt("請輸入目前這套分數反應風格的名稱：", curName);
+  if (!newName || !newName.trim()) return;
+  if (!presets.styleNames) presets.styleNames = {};
+  presets.styleNames[activeId] = newName.trim();
+  savePresetsToStorage(presets);
+  updateStyleSwitcherUI();
 }
 
 // 智慧解析各種 GIF / 迷因網址（支援 Google 圖片搜尋連結、Giphy、Imgur、Tenor 等）
@@ -852,7 +956,7 @@ function normalizeMemeUrl(rawUrl) {
   return url;
 }
 
-// 當外部 GIF/圖片因防盜連(Referer/CORS)或網頁連結載入失敗時，自動透過無防盜連代理(wsrv.nl 保留GIF動畫幀 n=-1)或擷取真實 GIF
+// 當外部 GIF/圖片因防盜連(Referer/CORS)或網頁連結載入失敗時，自動透過無防盜連代理或擷取真實 GIF / MP4 短片
 window.handleMemeImgError = function (imgEl) {
   if (!imgEl) return;
   const currentSrc = imgEl.getAttribute("src") || "";
@@ -884,6 +988,38 @@ window.handleMemeImgError = function (imgEl) {
         });
       return;
     }
+    // 若為 Pinterest 網頁連結 (pin.it/... 或 pinterest.com/pin/...)，自動擷取原始 MP4 短片（含原音）或原圖
+    if (rawOrig.includes("pin.it/") || rawOrig.includes("pinterest.com/pin/")) {
+      fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(rawOrig)}`)
+        .then((r) => r.json())
+        .then((data) => {
+          const html = (data && data.contents) || "";
+          const mp4Match = html.match(/https:\/\/v\d*\.pinimg\.com\/videos\/[^"'\s<>]+\.mp4/i);
+          if (mp4Match && mp4Match[0] && imgEl.parentNode) {
+            const inBanner = Boolean(imgEl.closest(".roast-banner"));
+            const vid = document.createElement("video");
+            vid.src = mp4Match[0];
+            vid.className = imgEl.className;
+            vid.autoplay = true;
+            vid.loop = true;
+            vid.playsInline = true;
+            vid.muted = !inBanner;
+            imgEl.replaceWith(vid);
+            vid.play().catch(() => {});
+            return;
+          }
+          const origMatch = html.match(/https:\/\/i\.pinimg\.com\/(?:originals|736x)\/[^"'\s<>]+\.(?:gif|jpg|jpeg|png|webp)/i);
+          if (origMatch && origMatch[0]) {
+            imgEl.src = origMatch[0];
+          } else {
+            imgEl.src = `https://wsrv.nl/?url=${encodeURIComponent(rawOrig)}&n=-1`;
+          }
+        })
+        .catch(() => {
+          imgEl.src = `https://wsrv.nl/?url=${encodeURIComponent(rawOrig)}&n=-1`;
+        });
+      return;
+    }
     // 一般防盜連圖片/GIF：使用 wsrv.nl 全球圖片代理並加上 &n=-1 完整保留 GIF 動態影格
     imgEl.src = `https://wsrv.nl/?url=${encodeURIComponent(rawOrig)}&n=-1`;
   }
@@ -895,10 +1031,12 @@ function isVideoMediaSrc(src) {
   return s.startsWith("data:video/") || /\.(mp4|webm|mov)(\?|#|$)/i.test(s);
 }
 
-function renderMemeMediaHtml(src, altText = "梗圖", cssClass = "") {
+// enableSound = true 時（彈出視窗顯示時）保留影片/動態梗圖本身的原始音效；在設定表格縮圖預覽時則保持靜音
+function renderMemeMediaHtml(src, altText = "梗圖", cssClass = "", enableSound = false) {
   if (!src) return "";
   if (isVideoMediaSrc(src)) {
-    return `<video src="${escapeHtml(src)}" class="${cssClass}" autoplay loop muted playsinline></video>`;
+    const muteAttr = enableSound ? "" : "muted";
+    return `<video src="${escapeHtml(src)}" class="${cssClass}" autoplay loop ${muteAttr} playsinline></video>`;
   }
   return `<img src="${escapeHtml(src)}" data-orig-src="${escapeHtml(src)}" alt="${escapeHtml(altText)}" class="${cssClass}" referrerpolicy="no-referrer" onerror="window.handleMemeImgError && window.handleMemeImgError(this)" />`;
 }
@@ -949,6 +1087,7 @@ function renderMemeTestButtons() {
 function renderReactionEditorTable(customRules = null) {
   const tbody = document.getElementById("reaction-table-tbody");
   if (!tbody) return;
+  updateStyleSwitcherUI();
   const rules = customRules || getReactionRules();
   tbody.innerHTML = "";
 
@@ -959,7 +1098,7 @@ function renderReactionEditorTable(customRules = null) {
     const effectiveKey = rule.imgKey === "none" ? "none" : hasCustom ? "custom" : rule.imgKey;
     const currentSrc = getMemeSrcByKey(effectiveKey, rule.customImgUrl);
     const thumbHtml = currentSrc
-      ? renderMemeMediaHtml(currentSrc, "預覽圖", "")
+      ? renderMemeMediaHtml(currentSrc, "預覽圖", "", false)
       : `<span>無圖片</span>`;
     const isDataUri = (rule.customImgUrl || "").startsWith("data:");
     const displayCustomVal = isDataUri ? "（已上傳本機圖片/GIF）" : (rule.customImgUrl || "");
@@ -993,7 +1132,7 @@ function renderReactionEditorTable(customRules = null) {
                 <option value="custom" ${effectiveKey === "custom" ? "selected" : ""}>✨ 自訂上傳 / 網址</option>
                 <option value="none" ${effectiveKey === "none" ? "selected" : ""}>🚫 不顯示圖片</option>
               </select>
-              <label class="btn btn-sm btn-primary meme-upload-label" title="從電腦或手機選擇迷因圖片、GIF動圖或MP4短片">
+              <label class="btn btn-sm btn-primary meme-upload-label" title="從電腦或手機選擇迷因圖片、GIF動圖或含音效MP4短片">
                 📁 上傳
                 <input type="file" accept="image/*,video/mp4,video/webm,.gif" class="react-input-file hidden" data-idx="${idx}" />
               </label>
@@ -1002,7 +1141,7 @@ function renderReactionEditorTable(customRules = null) {
               type="text"
               class="react-input-custom-url"
               data-idx="${idx}"
-              placeholder="🔗 貼上 GIF / 圖片網址 (支援 Google搜圖/Giphy/Imgur/Tenor) 或點上方📁上傳"
+              placeholder="🔗 貼上 GIF / 圖片 / 含音效短片網址 (支援 Pinterest/Tenor/Giphy) 或點上方📁上傳"
               value="${escapeHtml(displayCustomVal)}"
             />
           </div>
@@ -1045,7 +1184,7 @@ function renderReactionEditorTable(customRules = null) {
       const src = getMemeSrcByKey(sel.value, customVal);
       const thumbBox = document.getElementById(`meme-thumb-${idx}`);
       if (thumbBox) {
-        thumbBox.innerHTML = src ? renderMemeMediaHtml(src, "預覽圖", "") : `<span>無圖片</span>`;
+        thumbBox.innerHTML = src ? renderMemeMediaHtml(src, "預覽圖", "", false) : `<span>無圖片</span>`;
       }
       const current = collectReactionRulesFromDOM();
       saveRulesToStorage(current);
@@ -1070,7 +1209,7 @@ function renderReactionEditorTable(customRules = null) {
       const src = getMemeSrcByKey(sel ? sel.value : "custom", normalized);
       const thumbBox = document.getElementById(`meme-thumb-${idx}`);
       if (thumbBox) {
-        thumbBox.innerHTML = src ? renderMemeMediaHtml(src, "預覽圖", "") : `<span>無圖片</span>`;
+        thumbBox.innerHTML = src ? renderMemeMediaHtml(src, "預覽圖", "", false) : `<span>無圖片</span>`;
       }
       const current = collectReactionRulesFromDOM();
       saveRulesToStorage(current);
@@ -1098,7 +1237,7 @@ function renderReactionEditorTable(customRules = null) {
           urlInput.value = `（已上傳：${file.name}）`;
         }
         if (thumbBox) {
-          thumbBox.innerHTML = renderMemeMediaHtml(dataUri, "預覽圖", "");
+          thumbBox.innerHTML = renderMemeMediaHtml(dataUri, "預覽圖", "", false);
         }
         saveReactionTableFromDOM(false);
       };
@@ -1187,16 +1326,25 @@ function saveReactionTableFromDOM(showAlert = true) {
     renderMemeTestButtons();
   }
   if (showAlert) {
-    alert("✅ 已儲存分數區間、台詞與迷因 GIF 設定！");
+    const presets = getReactionPresets();
+    const curName = (presets.styleNames && presets.styleNames[presets.activeStyleId]) || presets.activeStyleId;
+    alert(`✅ 已儲存【${curName}】的分數區間、台詞與迷因設定！`);
   }
   return newRules;
 }
 
 let manualScoreRoastTimer = null;
 
+function restoreBgmDucking() {
+  if (typeof bgmState !== "undefined" && bgmState.audio) {
+    bgmState.audio.volume = bgmState.volume || 0.55;
+  }
+}
+
 function clearRoastPopups() {
   roastTimeouts.forEach((t) => clearTimeout(t));
   roastTimeouts = [];
+  restoreBgmDucking();
   const container = document.getElementById("roast-container");
   if (container) container.innerHTML = "";
 }
@@ -1231,7 +1379,8 @@ function triggerRoastPopups(score, explicitRule = null) {
   banner.title = "點擊可立即關閉此彈窗";
   const imgSrc = getMemeSrcByKey(matched.imgKey, matched.customImgUrl);
   const mediaClass = matched.imgKey === "hamster" && !matched.customImgUrl ? "roast-hamster-img" : "roast-meme-img";
-  const imgHtml = imgSrc ? renderMemeMediaHtml(imgSrc, matched.label, mediaClass) : "";
+  // enableSound = true：讓彈出的短片/有聲動圖直接播放原音
+  const imgHtml = imgSrc ? renderMemeMediaHtml(imgSrc, matched.label, mediaClass, true) : "";
   const durSec = Math.max(1, Number(matched.durationSec) || 5);
 
   banner.innerHTML = `
@@ -1241,11 +1390,28 @@ function triggerRoastPopups(score, explicitRule = null) {
   `;
   banner.addEventListener("click", () => {
     banner.remove();
+    restoreBgmDucking();
   });
   container.appendChild(banner);
 
+  // 若此反應包含有聲短片 (例如 memes/r_100.mp4)，自動開啟原音並短暫壓低背景音樂音量，讓梗圖原音清楚播放
+  const vidEl = banner.querySelector("video");
+  if (vidEl) {
+    vidEl.muted = false;
+    vidEl.volume = 0.95;
+    if (typeof bgmState !== "undefined" && bgmState.audio && !bgmState.muted) {
+      bgmState.audio.volume = 0.12;
+    }
+    vidEl.play().catch(() => {
+      // 若瀏覽器尚未互動解鎖音訊，退回靜音播放避免卡住畫面
+      vidEl.muted = true;
+      vidEl.play().catch(() => {});
+    });
+  }
+
   const timerId = setTimeout(() => {
     banner.remove();
+    restoreBgmDucking();
   }, durSec * 1000);
   roastTimeouts.push(timerId);
 }
@@ -1368,8 +1534,8 @@ const BGM_TRACKS = {
   },
   last60: {
     src: "audio/last60.mp3",
-    ytUrl: "https://youtu.be/MW6sp_AXPI0?si=J7ZQ6OcpPa0Hib9A",
-    label: "🔥 倒數 60 秒音樂 (Beautiful Creatures)"
+    ytUrl: "https://youtu.be/7k_MZ84djDk?si=Hnp69VMz05GYOM54",
+    label: "🔥 倒數 60 秒音樂 (7k_MZ84djDk)"
   },
   reveal: {
     src: "audio/reveal.mp3",
@@ -1913,10 +2079,10 @@ function bindEvents() {
   const btnResetReactions = document.getElementById("btn-reset-reactions");
   if (btnResetReactions) {
     btnResetReactions.addEventListener("click", () => {
-      window._cachedReactionRules = null;
-      localStorage.removeItem(REACTION_STORAGE_KEY);
-      window._cachedReactionRules = null;
-      saveRulesToStorage(DEFAULT_REACTION_RULES);
+      const presets = getReactionPresets();
+      const activeId = presets.activeStyleId || "style1";
+      const defaultForStyle = activeId === "style1" ? DEFAULT_REACTION_RULES : DEFAULT_REACTION_RULES_STYLE2;
+      saveRulesToStorage(defaultForStyle);
       openReactionIDB()
         .then((db) => {
           const tx = db.transaction("rules_store", "readwrite");

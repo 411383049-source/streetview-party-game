@@ -9,7 +9,7 @@
     rel="stylesheet"
     href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"
   />
-  <link rel="stylesheet" href="style.css?v=17" />
+  <link rel="stylesheet" href="style.css?v=18" />
 </head>
 <body>
   <!-- 街景主畫面 -->
@@ -172,6 +172,22 @@
               <button id="btn-reset-reactions" class="btn btn-sm">↺ 還原預設</button>
             </div>
           </div>
+
+          <!-- 分數反應風格切換列（支援多套反應風格快速切換與獨立編輯） -->
+          <div class="reaction-style-bar" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; background: rgba(15, 23, 42, 0.72); border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 10px; padding: 8px 12px; margin: 4px 0;">
+            <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 6px;">
+              <span style="font-size: 0.86rem; font-weight: 800; color: #38bdf8;">🎨 目前反應風格：</span>
+              <div id="reaction-style-tabs" style="display: flex; flex-wrap: wrap; gap: 6px;">
+                <button type="button" class="btn btn-sm btn-primary style-tab-btn" data-style-id="style1">🔥 風格一（第一套）</button>
+                <button type="button" class="btn btn-sm style-tab-btn" data-style-id="style2">✨ 風格二（第二套）</button>
+                <button type="button" class="btn btn-sm style-tab-btn" data-style-id="style3">🌟 風格三（第三套）</button>
+              </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <button type="button" id="btn-cycle-reaction-style" class="btn btn-sm btn-warning" title="一鍵切換到下一套分數反應風格">🔄 切換反應風格</button>
+              <button type="button" id="btn-rename-reaction-style" class="btn btn-sm" title="自訂目前這套風格的名稱">✏️ 改風格名</button>
+            </div>
+          </div>
           <div class="reaction-table-wrapper">
             <table class="reaction-edit-table">
               <thead>
@@ -235,6 +251,6 @@
 
   <!-- Leaflet JS (Cloudflare CDN) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-  <script src="app.js?v=17"></script>
+  <script src="app.js?v=18"></script>
 </body>
 </html>
