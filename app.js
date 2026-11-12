@@ -623,7 +623,7 @@ const DEFAULT_REACTION_RULES = [
     text: "哈利路亞!老天賞飯吃!THE GOAT!",
     durationSec: 5,
     imgKey: "custom",
-    customImgUrl: "memes/r_100.gif",
+    customImgUrl: "memes/r_100.mp4",
     bannerClass: "roast-peak"
   },
   {
@@ -729,6 +729,7 @@ const DEFAULT_REACTION_RULES = [
 
 // 已知網頁連結與對應直接內建 GIF/圖片映射表（確保貼上網頁連結也能 100% 瞬間顯示）
 const KNOWN_MEME_URL_MAP = {
+  "https://pin.it/4EeoixDC3": "memes/r_100.mp4",
   "https://tenor.com/view/peak-meme-memes-gif-69220525783045252": "memes/r_100.gif",
   "https://tenor.com/zh-TW/view/cristiano-ronaldo-siuu-el-bicho-portugal-uzbekistan-gif-18221739838441843832": "memes/r_95.gif",
   "https://k.sina.cn/article_6429924047_17f40dacf00100omj2.html?from=animation": "memes/r_60.jpg",
@@ -738,8 +739,8 @@ const KNOWN_MEME_URL_MAP = {
 };
 
 // 支援超大 GIF 檔案儲存的記憶體快取與 IndexedDB（突破 localStorage 5MB 限制）
-const REACTION_STORAGE_KEY = "sv_reaction_rules_v3";
-const REACTION_IDB_KEY = "current_rules_v3";
+const REACTION_STORAGE_KEY = "sv_reaction_rules_v4";
+const REACTION_IDB_KEY = "current_rules_v4";
 window._cachedReactionRules = null;
 
 function openReactionIDB() {
