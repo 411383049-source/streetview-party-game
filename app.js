@@ -727,18 +727,132 @@ const DEFAULT_REACTION_RULES = [
   }
 ];
 
-// 第二套預設反應表（預設對齊 10 個分數區間，供使用者自由改寫第二套、第三套風格的台詞與梗圖）
+// 第二套預設反應表（使用者編輯完成的 10 個分數區間與專屬有聲短片/動態梗圖）
 const DEFAULT_REACTION_RULES_STYLE2 = [
-  { id: "s2_0_100_100", label: "100 ~ 100 分", minScore: 100, maxScore: 100, text: "🏆 滿分神人！地理系教授請受我一拜！", durationSec: 5, imgKey: "gte90", customImgUrl: "", bannerClass: "roast-peak" },
-  { id: "s2_1_95_99",   label: "95 ~ 99 分",   minScore: 95,  maxScore: 99,  text: "🔥 太神啦！只差一點點就完全命中！", durationSec: 5, imgKey: "gte90", customImgUrl: "", bannerClass: "roast-peak" },
-  { id: "s2_2_90_94",   label: "90 ~ 94 分",   minScore: 90,  maxScore: 94,  text: "👏 超強發揮！這題根本難不倒你！", durationSec: 5, imgKey: "gte90", customImgUrl: "", bannerClass: "roast-peak" },
-  { id: "s2_3_80_89",   label: "80 ~ 89 分",   minScore: 80,  maxScore: 89,  text: "😎 水喔！方向感非常準！", durationSec: 5, imgKey: "lt90",  customImgUrl: "", bannerClass: "" },
-  { id: "s2_4_70_79",   label: "70 ~ 79 分",   minScore: 70,  maxScore: 79,  text: "😏 還行還行，有抓到大方向！", durationSec: 5, imgKey: "lt90",  customImgUrl: "", bannerClass: "" },
-  { id: "s2_5_60_69",   label: "60 ~ 69 分",   minScore: 60,  maxScore: 69,  text: "🤣 低空飛過及格邊緣！好險好險！", durationSec: 5, imgKey: "hamster", customImgUrl: "", bannerClass: "roast-severe" },
-  { id: "s2_6_49_50",   label: "49 ~ 50 分",   minScore: 49,  maxScore: 50,  text: "🎲 五五波盲猜大師！剛好猜在一半！", durationSec: 5, imgKey: "lt50",  customImgUrl: "", bannerClass: "roast-severe" },
-  { id: "s2_7_30_49",   label: "30 ~ 49 分",   minScore: 30,  maxScore: 49,  text: "🙏 至少耶穌跟你媽愛你，再接再厲！", durationSec: 5, imgKey: "hamster", customImgUrl: "", bannerClass: "roast-severe" },
-  { id: "s2_8_10_29",   label: "10 ~ 29 分",   minScore: 10,  maxScore: 29,  text: "🧭 你的指南針是不是裝反了？", durationSec: 5, imgKey: "lt40",  customImgUrl: "", bannerClass: "roast-severe" },
-  { id: "s2_9_0_9",     label: "0 ~ 9 分",     minScore: 0,   maxScore: 9,   text: "🌍 這是跑到哪個平行宇宙去了？！", durationSec: 5, imgKey: "lt40",  customImgUrl: "", bannerClass: "roast-severe" }
+  {
+    id: "r_0_100_100",
+    label: "100 ~ 100 分",
+    minScore: 100,
+    maxScore: 100,
+    text: "🏆 滿分神人！地理系教授請受我一拜！",
+    durationSec: 10,
+    imgKey: "custom",
+    customImgUrl: "memes/s2_100.mp4",
+    bannerClass: "roast-peak"
+  },
+  {
+    id: "r_1_95_99",
+    label: "95 ~ 99 分",
+    minScore: 95,
+    maxScore: 99,
+    text: "🔥 太神啦！只差一點點就完全命中！",
+    durationSec: 10,
+    imgKey: "custom",
+    customImgUrl: "memes/s2_95.mp4",
+    bannerClass: "roast-peak"
+  },
+  {
+    id: "r_2_90_94",
+    label: "90 ~ 94 分",
+    minScore: 90,
+    maxScore: 94,
+    text: "👏 超強發揮！這題根本難不倒你！",
+    durationSec: 13,
+    imgKey: "custom",
+    customImgUrl: "memes/s2_90.mp4",
+    bannerClass: "roast-peak"
+  },
+  {
+    id: "r_3_80_89",
+    label: "80 ~ 89 分",
+    minScore: 80,
+    maxScore: 89,
+    text: "😎 水喔！方向感非常準！",
+    durationSec: 10,
+    imgKey: "custom",
+    customImgUrl: "memes/s2_80.mp4",
+    bannerClass: ""
+  },
+  {
+    id: "r_4_70_79",
+    label: "70 ~ 79 分",
+    minScore: 70,
+    maxScore: 79,
+    text: "😏 還行還行，有抓到大方向！",
+    durationSec: 10,
+    imgKey: "custom",
+    customImgUrl: "memes/s2_70.mp4",
+    bannerClass: ""
+  },
+  {
+    id: "r_5_60_69",
+    label: "60 ~ 69 分",
+    minScore: 60,
+    maxScore: 69,
+    text: "🤣 低空飛過及格邊緣！好險好險！",
+    durationSec: 10,
+    imgKey: "custom",
+    customImgUrl: "memes/s2_60.mp4",
+    bannerClass: "roast-severe"
+  },
+  {
+    id: "r_6_49_50",
+    label: "49 ~ 50 分",
+    minScore: 49,
+    maxScore: 50,
+    text: "🎲 五五波盲猜大師！",
+    durationSec: 10,
+    imgKey: "custom",
+    customImgUrl: "memes/s2_50.mp4",
+    bannerClass: "roast-severe"
+  },
+  {
+    id: "r_7_30_49",
+    label: "30 ~ 49 分",
+    minScore: 30,
+    maxScore: 49,
+    text: "再接再厲",
+    durationSec: 10,
+    imgKey: "custom",
+    customImgUrl: "memes/s2_30.mp4",
+    bannerClass: "roast-severe"
+  },
+  {
+    id: "r_8_10_29",
+    label: "10 ~ 29 分",
+    minScore: 10,
+    maxScore: 29,
+    text: "下次會更好",
+    durationSec: 10,
+    imgKey: "custom",
+    customImgUrl: "memes/s2_10.mp4",
+    bannerClass: "roast-severe"
+  },
+  {
+    id: "r_9_0_9",
+    label: "0 ~ 9 分",
+    minScore: 0,
+    maxScore: 9,
+    text: "沒事的再加油!",
+    durationSec: 10,
+    imgKey: "custom",
+    customImgUrl: "memes/s2_0.mp4",
+    bannerClass: "roast-severe"
+  }
+];
+
+// 第三套預設反應表（預留給使用者自由改寫第三套風格）
+const DEFAULT_REACTION_RULES_STYLE3 = [
+  { id: "s3_0_100_100", label: "100 ~ 100 分", minScore: 100, maxScore: 100, text: "🏆 滿分神人！地理系教授請受我一拜！", durationSec: 5, imgKey: "gte90", customImgUrl: "", bannerClass: "roast-peak" },
+  { id: "s3_1_95_99",   label: "95 ~ 99 分",   minScore: 95,  maxScore: 99,  text: "🔥 太神啦！只差一點點就完全命中！", durationSec: 5, imgKey: "gte90", customImgUrl: "", bannerClass: "roast-peak" },
+  { id: "s3_2_90_94",   label: "90 ~ 94 分",   minScore: 90,  maxScore: 94,  text: "👏 超強發揮！這題根本難不倒你！", durationSec: 5, imgKey: "gte90", customImgUrl: "", bannerClass: "roast-peak" },
+  { id: "s3_3_80_89",   label: "80 ~ 89 分",   minScore: 80,  maxScore: 89,  text: "😎 水喔！方向感非常準！", durationSec: 5, imgKey: "lt90",  customImgUrl: "", bannerClass: "" },
+  { id: "s3_4_70_79",   label: "70 ~ 79 分",   minScore: 70,  maxScore: 79,  text: "😏 還行還行，有抓到大方向！", durationSec: 5, imgKey: "lt90",  customImgUrl: "", bannerClass: "" },
+  { id: "s3_5_60_69",   label: "60 ~ 69 分",   minScore: 60,  maxScore: 69,  text: "🤣 低空飛過及格邊緣！好險好險！", durationSec: 5, imgKey: "hamster", customImgUrl: "", bannerClass: "roast-severe" },
+  { id: "s3_6_49_50",   label: "49 ~ 50 分",   minScore: 49,  maxScore: 50,  text: "🎲 五五波盲猜大師！剛好猜在一半！", durationSec: 5, imgKey: "lt50",  customImgUrl: "", bannerClass: "roast-severe" },
+  { id: "s3_7_30_49",   label: "30 ~ 49 分",   minScore: 30,  maxScore: 49,  text: "🙏 至少耶穌跟你媽愛你，再接再厲！", durationSec: 5, imgKey: "hamster", customImgUrl: "", bannerClass: "roast-severe" },
+  { id: "s3_8_10_29",   label: "10 ~ 29 分",   minScore: 10,  maxScore: 29,  text: "🧭 你的指南針是不是裝反了？", durationSec: 5, imgKey: "lt40",  customImgUrl: "", bannerClass: "roast-severe" },
+  { id: "s3_9_0_9",     label: "0 ~ 9 分",     minScore: 0,   maxScore: 9,   text: "🌍 這是跑到哪個平行宇宙去了？！", durationSec: 5, imgKey: "lt40",  customImgUrl: "", bannerClass: "roast-severe" }
 ];
 
 const DEFAULT_REACTION_PRESETS = {
@@ -751,7 +865,7 @@ const DEFAULT_REACTION_PRESETS = {
   styles: {
     style1: DEFAULT_REACTION_RULES,
     style2: DEFAULT_REACTION_RULES_STYLE2,
-    style3: DEFAULT_REACTION_RULES_STYLE2
+    style3: DEFAULT_REACTION_RULES_STYLE3
   }
 };
 
@@ -763,12 +877,22 @@ const KNOWN_MEME_URL_MAP = {
   "https://k.sina.cn/article_6429924047_17f40dacf00100omj2.html?from=animation": "memes/r_60.jpg",
   "https://tenor.com/view/gintoki-angry-weird-face-pointing-gif-13302595": "memes/r_10.gif",
   "https://truth.bahamut.com.tw/s01/201701/0d6ecbb3a84ca4901e5abd3db11308ab.JPG": "memes/r_0.jpg",
-  "https://i.pinimg.com/736x/0e/5b/a0/0e5ba07ab08e33db4bc1f957dd71bd1e.jpg": "memes/r_50.jpg"
+  "https://i.pinimg.com/736x/0e/5b/a0/0e5ba07ab08e33db4bc1f957dd71bd1e.jpg": "memes/r_50.jpg",
+  "https://pin.it/53eCql80v": "memes/s2_100.mp4",
+  "https://pin.it/7BNu02G2Q": "memes/s2_95.mp4",
+  "https://pin.it/6qDOtXEZs": "memes/s2_90.mp4",
+  "https://pin.it/7Ih6dcoPq": "memes/s2_80.mp4",
+  "https://pin.it/8mVjqEw5C": "memes/s2_70.mp4",
+  "https://pin.it/4ch8QijKB": "memes/s2_60.mp4",
+  "https://pin.it/2kqdW2lkf": "memes/s2_50.mp4",
+  "https://pin.it/59A2Hmmku": "memes/s2_30.mp4",
+  "https://pin.it/1VChCjhRi": "memes/s2_10.mp4",
+  "https://pin.it/1COTpTVwh": "memes/s2_0.mp4"
 };
 
 // 支援多套風格與超大 GIF/MP4 檔案儲存的記憶體快取與 IndexedDB（突破 localStorage 5MB 限制）
-const REACTION_STORAGE_KEY = "sv_reaction_presets_v6";
-const REACTION_IDB_KEY = "current_presets_v6";
+const REACTION_STORAGE_KEY = "sv_reaction_presets_v7";
+const REACTION_IDB_KEY = "current_presets_v7";
 window._cachedReactionPresets = null;
 
 function openReactionIDB() {
