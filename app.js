@@ -412,13 +412,21 @@ async function generateDynamicRoadQuestion() {
   };
 }
 
-// 開始新的一局隨機街景車挑戰（每過一題自動換下一組輪流計分）
+// 手動切換到下一組作答（與「出新題」分開為獨立按鈕）
+function switchToNextTeam() {
+  if (state.teams.length === 0) return;
+  state.currentTeamIndex = (state.currentTeamIndex + 1) % state.teams.length;
+  saveState();
+  updateTurnUI();
+  renderTeams();
+  playSound(587.33, 0.1, "triangle");
+}
+
+// 開始新的一局隨機街景車挑戰（保持目前組別，由「👥 換下一組」按鈕獨立切換組別）
 async function startRandomRound(isFirstLoad = false) {
   clearRoastPopups();
 
-  if (!isFirstLoad && state.teams.length > 0) {
-    state.currentTeamIndex = (state.currentTeamIndex + 1) % state.teams.length;
-  } else if (state.currentTeamIndex >= state.teams.length) {
+  if (state.currentTeamIndex >= state.teams.length) {
     state.currentTeamIndex = 0;
   }
 
@@ -1654,13 +1662,13 @@ function revealAnswer() {
     }
     const teamName = activeTeam ? `【${activeTeam.name}】` : "本組";
     const pauseMsg = pausePenalty > 0 ? `，且因暫停 ${pausePenalty} 秒倒扣 ${pausePenalty} 分` : "";
-    distEl.textContent = `⚠️ ${teamName} 未在時間內於右下角地圖插旗，本題得分 +0 分${pauseMsg}（可使用左側 +1 / +10 手動加分）`;
+    distEl.textContent = `⏰ ${teamName} 時間到未插旗（或尚未於右下角地圖插旗），本題得分：0 分${pauseMsg}（可使用左側 +1 / +10 手動加分）`;
     distEl.classList.remove("hidden");
     guessMap.setView(actualLatLng, 4);
   }
 
-  // 觸發各分數區間梗圖與搞笑提示（若未插旗但已手動計分，則依該組目前分數觸發）
-  const scoreForRoast = state.guessLatLng ? earnedPts : (activeTeam && activeTeam.score > 0 ? activeTeam.score : earnedPts);
+  // 觸發各分數區間梗圖與搞笑提示（未插旗時直接以本題 0 分觸發 0 分反應！）
+  const scoreForRoast = state.guessLatLng ? earnedPts : 0;
   triggerRoastPopups(scoreForRoast);
 
   document.getElementById("answer-modal").classList.remove("hidden");
@@ -2062,7 +2070,12 @@ function showEndGamePodium() {
 
 // 綁定所有按鈕事件
 function bindEvents() {
-  // 隨機出題（自動換下一組）與回到起點
+  // 獨立「👥 換下一組」與「🎲 出新題」按鈕與回到起點
+  const btnNextTeam = document.getElementById("btn-next-team");
+  if (btnNextTeam) {
+    btnNextTeam.addEventListener("click", switchToNextTeam);
+  }
+
   document.getElementById("btn-random").addEventListener("click", () => {
     startRandomRound(false);
   });
@@ -2115,6 +2128,10 @@ function bindEvents() {
   document.getElementById("btn-close-answer").addEventListener("click", () => {
     document.getElementById("answer-modal").classList.add("hidden");
   });
+  const btnAnswerNextTeam = document.getElementById("btn-answer-next-team");
+  if (btnAnswerNextTeam) {
+    btnAnswerNextTeam.addEventListener("click", switchToNextTeam);
+  }
   document.getElementById("btn-answer-next").addEventListener("click", () => {
     startRandomRound(false);
   });

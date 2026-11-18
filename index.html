@@ -9,7 +9,7 @@
     rel="stylesheet"
     href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"
   />
-  <link rel="stylesheet" href="style.css?v=20" />
+  <link rel="stylesheet" href="style.css?v=21" />
 </head>
 <body>
   <!-- 街景主畫面 -->
@@ -44,12 +44,15 @@
 
   <!-- 頂部控制列 -->
   <header id="top-bar">
-    <!-- 題號、目前輪流組別、隨機生成出題與回起點 -->
+    <!-- 題號、目前輪流組別、換組、出新題與回起點 -->
     <div class="glass-card round-controls">
       <span id="round-indicator" class="round-badge">🎯 第 1 題</span>
       <span id="turn-indicator" class="turn-badge">🎤 輪到：第一小隊</span>
-      <button id="btn-random" class="btn btn-primary" style="font-size: 0.95rem; padding: 7px 14px;">
-        🎲 隨機生成下一題（換下一組）
+      <button id="btn-next-team" class="btn btn-warning" style="font-size: 0.92rem; padding: 7px 12px;" title="切換到下一小隊作答">
+        👥 換下一組
+      </button>
+      <button id="btn-random" class="btn btn-primary" style="font-size: 0.95rem; padding: 7px 14px;" title="隨機生成新題目（保持目前組別）">
+        🎲 出新題
       </button>
       <button id="btn-reset-pos" class="btn" title="迷路時回到初始起點">🧭 回起點</button>
     </div>
@@ -88,7 +91,7 @@
     <div id="scoreboard-body">
       <div id="teams-list"></div>
       <div class="help-note" style="margin-top: 8px;">
-        💡 每題自動輪流換下一組計分；調整分數或揭曉答案皆會彈出對應梗圖！
+        💡 點擊「👥 換下一組」切換隊伍、點擊「🎲 出新題」抽新題目；時間到未插旗得 0 分！
       </div>
     </div>
   </aside>
@@ -144,8 +147,9 @@
         <div id="answer-country" class="answer-country">🇯🇵 日本</div>
         <div id="answer-city" class="answer-city">📍 東京</div>
       </div>
-      <div style="display: flex; gap: 8px;">
-        <button id="btn-answer-next" class="btn btn-primary">🎲 隨機下一題（換下一組）➡</button>
+      <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+        <button id="btn-answer-next-team" class="btn btn-warning">👥 換下一組</button>
+        <button id="btn-answer-next" class="btn btn-primary">🎲 出新題 ➡</button>
         <button id="btn-close-answer" class="btn">✕</button>
       </div>
     </div>
@@ -252,6 +256,6 @@
 
   <!-- Leaflet JS (Cloudflare CDN) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-  <script src="app.js?v=20"></script>
+  <script src="app.js?v=21"></script>
 </body>
 </html>

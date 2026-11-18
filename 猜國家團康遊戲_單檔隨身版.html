@@ -1065,12 +1065,15 @@ textarea:focus {
 
   <!-- 頂部控制列 -->
   <header id="top-bar">
-    <!-- 題號、目前輪流組別、隨機生成出題與回起點 -->
+    <!-- 題號、目前輪流組別、換組、出新題與回起點 -->
     <div class="glass-card round-controls">
       <span id="round-indicator" class="round-badge">🎯 第 1 題</span>
       <span id="turn-indicator" class="turn-badge">🎤 輪到：第一小隊</span>
-      <button id="btn-random" class="btn btn-primary" style="font-size: 0.95rem; padding: 7px 14px;">
-        🎲 隨機生成下一題（換下一組）
+      <button id="btn-next-team" class="btn btn-warning" style="font-size: 0.92rem; padding: 7px 12px;" title="切換到下一小隊作答">
+        👥 換下一組
+      </button>
+      <button id="btn-random" class="btn btn-primary" style="font-size: 0.95rem; padding: 7px 14px;" title="隨機生成新題目（保持目前組別）">
+        🎲 出新題
       </button>
       <button id="btn-reset-pos" class="btn" title="迷路時回到初始起點">🧭 回起點</button>
     </div>
@@ -1109,7 +1112,7 @@ textarea:focus {
     <div id="scoreboard-body">
       <div id="teams-list"></div>
       <div class="help-note" style="margin-top: 8px;">
-        💡 每題自動輪流換下一組計分；調整分數或揭曉答案皆會彈出對應梗圖！
+        💡 點擊「👥 換下一組」切換隊伍、點擊「🎲 出新題」抽新題目；時間到未插旗得 0 分！
       </div>
     </div>
   </aside>
@@ -1165,8 +1168,9 @@ textarea:focus {
         <div id="answer-country" class="answer-country">🇯🇵 日本</div>
         <div id="answer-city" class="answer-city">📍 東京</div>
       </div>
-      <div style="display: flex; gap: 8px;">
-        <button id="btn-answer-next" class="btn btn-primary">🎲 隨機下一題（換下一組）➡</button>
+      <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+        <button id="btn-answer-next-team" class="btn btn-warning">👥 換下一組</button>
+        <button id="btn-answer-next" class="btn btn-primary">🎲 出新題 ➡</button>
         <button id="btn-close-answer" class="btn">✕</button>
       </div>
     </div>
@@ -1688,13 +1692,21 @@ async function generateDynamicRoadQuestion() {
   };
 }
 
-// 開始新的一局隨機街景車挑戰（每過一題自動換下一組輪流計分）
+// 手動切換到下一組作答（與「出新題」分開為獨立按鈕）
+function switchToNextTeam() {
+  if (state.teams.length === 0) return;
+  state.currentTeamIndex = (state.currentTeamIndex + 1) % state.teams.length;
+  saveState();
+  updateTurnUI();
+  renderTeams();
+  playSound(587.33, 0.1, "triangle");
+}
+
+// 開始新的一局隨機街景車挑戰（保持目前組別，由「👥 換下一組」按鈕獨立切換組別）
 async function startRandomRound(isFirstLoad = false) {
   clearRoastPopups();
 
-  if (!isFirstLoad && state.teams.length > 0) {
-    state.currentTeamIndex = (state.currentTeamIndex + 1) % state.teams.length;
-  } else if (state.currentTeamIndex >= state.teams.length) {
+  if (state.currentTeamIndex >= state.teams.length) {
     state.currentTeamIndex = 0;
   }
 
@@ -2930,13 +2942,13 @@ function revealAnswer() {
     }
     const teamName = activeTeam ? `【${activeTeam.name}】` : "本組";
     const pauseMsg = pausePenalty > 0 ? `，且因暫停 ${pausePenalty} 秒倒扣 ${pausePenalty} 分` : "";
-    distEl.textContent = `⚠️ ${teamName} 未在時間內於右下角地圖插旗，本題得分 +0 分${pauseMsg}（可使用左側 +1 / +10 手動加分）`;
+    distEl.textContent = `⏰ ${teamName} 時間到未插旗（或尚未於右下角地圖插旗），本題得分：0 分${pauseMsg}（可使用左側 +1 / +10 手動加分）`;
     distEl.classList.remove("hidden");
     guessMap.setView(actualLatLng, 4);
   }
 
-  // 觸發各分數區間梗圖與搞笑提示（若未插旗但已手動計分，則依該組目前分數觸發）
-  const scoreForRoast = state.guessLatLng ? earnedPts : (activeTeam && activeTeam.score > 0 ? activeTeam.score : earnedPts);
+  // 觸發各分數區間梗圖與搞笑提示（未插旗時直接以本題 0 分觸發 0 分反應！）
+  const scoreForRoast = state.guessLatLng ? earnedPts : 0;
   triggerRoastPopups(scoreForRoast);
 
   document.getElementById("answer-modal").classList.remove("hidden");
@@ -3338,7 +3350,12 @@ function showEndGamePodium() {
 
 // 綁定所有按鈕事件
 function bindEvents() {
-  // 隨機出題（自動換下一組）與回到起點
+  // 獨立「👥 換下一組」與「🎲 出新題」按鈕與回到起點
+  const btnNextTeam = document.getElementById("btn-next-team");
+  if (btnNextTeam) {
+    btnNextTeam.addEventListener("click", switchToNextTeam);
+  }
+
   document.getElementById("btn-random").addEventListener("click", () => {
     startRandomRound(false);
   });
@@ -3391,6 +3408,10 @@ function bindEvents() {
   document.getElementById("btn-close-answer").addEventListener("click", () => {
     document.getElementById("answer-modal").classList.add("hidden");
   });
+  const btnAnswerNextTeam = document.getElementById("btn-answer-next-team");
+  if (btnAnswerNextTeam) {
+    btnAnswerNextTeam.addEventListener("click", switchToNextTeam);
+  }
   document.getElementById("btn-answer-next").addEventListener("click", () => {
     startRandomRound(false);
   });
