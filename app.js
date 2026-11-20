@@ -628,8 +628,8 @@ const DEFAULT_REACTION_RULES = [
     label: "100 ~ 100 分",
     minScore: 100,
     maxScore: 100,
-    text: "哈利路亞!老天賞飯吃!THE GOAT!",
-    durationSec: 5,
+    text: "哈利路亞!THE GOAT!",
+    durationSec: 20,
     imgKey: "custom",
     customImgUrl: "memes/r_100.mp4",
     bannerClass: "roast-peak"
@@ -640,7 +640,7 @@ const DEFAULT_REACTION_RULES = [
     minScore: 95,
     maxScore: 99,
     text: "SIUUU!  Absolutely Sensational!",
-    durationSec: 5,
+    durationSec: 20,
     imgKey: "custom",
     customImgUrl: "memes/r_95.gif",
     bannerClass: "roast-peak"
@@ -651,7 +651,7 @@ const DEFAULT_REACTION_RULES = [
     minScore: 90,
     maxScore: 94,
     text: "🏆 太厲害了!讓我們將榮耀歸與神",
-    durationSec: 5,
+    durationSec: 20,
     imgKey: "gte90",
     customImgUrl: "",
     bannerClass: "roast-peak"
@@ -662,7 +662,7 @@ const DEFAULT_REACTION_RULES = [
     minScore: 80,
     maxScore: 89,
     text: "還可以啦說得過去",
-    durationSec: 5,
+    durationSec: 20,
     imgKey: "lt50",
     customImgUrl: "",
     bannerClass: ""
@@ -673,7 +673,7 @@ const DEFAULT_REACTION_RULES = [
     minScore: 70,
     maxScore: 79,
     text: "😏 就這?",
-    durationSec: 5,
+    durationSec: 20,
     imgKey: "lt90",
     customImgUrl: "",
     bannerClass: ""
@@ -684,7 +684,7 @@ const DEFAULT_REACTION_RULES = [
     minScore: 60,
     maxScore: 69,
     text: "🤣 哈哈哈菜就多練!我阿嬤都比你會猜",
-    durationSec: 5,
+    durationSec: 20,
     imgKey: "custom",
     customImgUrl: "memes/r_60.jpg",
     bannerClass: "roast-severe"
@@ -695,7 +695,7 @@ const DEFAULT_REACTION_RULES = [
     minScore: 49,
     maxScore: 50,
     text: "挺會掰的",
-    durationSec: 5,
+    durationSec: 20,
     imgKey: "custom",
     customImgUrl: "memes/r_50.jpg",
     bannerClass: "roast-severe"
@@ -706,7 +706,7 @@ const DEFAULT_REACTION_RULES = [
     minScore: 30,
     maxScore: 49,
     text: "別太看不起自己，至少你不行",
-    durationSec: 5,
+    durationSec: 20,
     imgKey: "hamster",
     customImgUrl: "",
     bannerClass: "roast-severe"
@@ -717,7 +717,7 @@ const DEFAULT_REACTION_RULES = [
     minScore: 10,
     maxScore: 29,
     text: "你們高中有畢業嗎?",
-    durationSec: 5,
+    durationSec: 20,
     imgKey: "custom",
     customImgUrl: "memes/r_10.gif",
     bannerClass: "roast-severe"
@@ -728,7 +728,7 @@ const DEFAULT_REACTION_RULES = [
     minScore: 0,
     maxScore: 9,
     text: "好可憐這已經不能開玩笑了",
-    durationSec: 5,
+    durationSec: 20,
     imgKey: "custom",
     customImgUrl: "memes/r_0.jpg",
     bannerClass: "roast-severe"
@@ -879,6 +879,7 @@ const DEFAULT_REACTION_PRESETS = {
 
 // 已知網頁連結與對應直接內建 GIF/圖片/短片映射表（確保貼上網頁連結也能 100% 瞬間顯示並保留原音）
 const KNOWN_MEME_URL_MAP = {
+  "https://pin.it/5W1nqhTlD": "memes/r_100.mp4",
   "https://pin.it/4EeoixDC3": "memes/r_100.mp4",
   "https://tenor.com/view/peak-meme-memes-gif-69220525783045252": "memes/r_100.gif",
   "https://tenor.com/zh-TW/view/cristiano-ronaldo-siuu-el-bicho-portugal-uzbekistan-gif-18221739838441843832": "memes/r_95.gif",
@@ -899,8 +900,8 @@ const KNOWN_MEME_URL_MAP = {
 };
 
 // 支援多套風格與超大 GIF/MP4 檔案儲存的記憶體快取與 IndexedDB（突破 localStorage 5MB 限制）
-const REACTION_STORAGE_KEY = "sv_reaction_presets_v7";
-const REACTION_IDB_KEY = "current_presets_v7";
+const REACTION_STORAGE_KEY = "sv_reaction_presets_v8";
+const REACTION_IDB_KEY = "current_presets_v8";
 window._cachedReactionPresets = null;
 
 function openReactionIDB() {
